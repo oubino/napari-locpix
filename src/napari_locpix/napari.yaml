@@ -23,6 +23,9 @@ contributions:
     - id: napari-locpix.make_func_widget
       python_name: napari_locpix._widget:example_function_widget
       title: Make example function widget
+    - id: napari-locpix.say_hi
+      title: Say hello, world!
+      python_name: napari_locpix:show_hello_message
   readers:
     - command: napari-locpix.get_reader
       accepts_directories: false
@@ -46,3 +49,6 @@ contributions:
     - command: napari-locpix.make_func_widget
       autogenerate: true
       display_name: Example Function Widget
+    - command: napari-locpix.say_hi  # note, same as command.id above
+      display_name: Hello World
+      autogenerate: true

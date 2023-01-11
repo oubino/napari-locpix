@@ -1,15 +1,23 @@
 """
-This module is an example of a barebones numpy reader plugin for napari.
+Read in .csv and .parquet files
 
-It implements the Reader specification, but your plugin may choose to
-implement multiple readers or even other plugin contributions. see:
+Modified from:
+https://github.com/napari/cookiecutter-napari-plugin 
+and
 https://napari.org/stable/plugins/guides.html?#readers
 """
+
+import polars as pl
+import pyarrow as pq
 import numpy as np
+from typing import Union, Sequence, Callable, List
+from ._datastruc import item, file_to_datastruc
 
+PathLike = str
+PathOrPaths = Union[PathLike, Sequence[PathLike]]
 
-def napari_get_reader(path):
-    """A basic implementation of a Reader contribution.
+def napari_get_reader(path: PathOrPaths):
+    """Get the relevant reader.
 
     Parameters
     ----------
@@ -29,7 +37,7 @@ def napari_get_reader(path):
         path = path[0]
 
     # if we know we cannot read the file, we immediately return None.
-    if not path.endswith(".npy"):
+    if (not path.endswith(".parquet")) and (not path.endswith(".csv")) :
         return None
 
     # otherwise we return the *function* that can read ``path``.
@@ -60,10 +68,26 @@ def reader_function(path):
     """
     # handle both a string and a list of strings
     paths = [path] if isinstance(path, str) else path
-    # load all files into array
-    arrays = [np.load(_path) for _path in paths]
-    # stack arrays into single array
-    data = np.squeeze(np.stack(arrays))
+
+    
+
+    # load file into numpy array
+    if path.endwith(".csv"):
+        datastruc = file_to_datastruc(path, "csv", )
+    elif path.endwith(".parquet"):
+        datastruc = file_to_datastruc(path, "parquet", )
+    histo = datastruc.coord_to_histo()
+
+    # display histogram in napari
+
+    # also store the datastructure in a widget
+
+    # widget should display:
+    # file name
+    # length
+    # column names
+
+    # writer can then access this when writing to .csv or .parquet
 
     # optional kwargs for the corresponding viewer.add_* method
     add_kwargs = {}
