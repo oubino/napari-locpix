@@ -80,7 +80,7 @@ class DatastrucWidget(QWidget):
             self,
             "Open file",
             "/home/some/folder",
-            "Files (*.csv, *.parquet)"
+            "Files (*.csv *.parquet)"
             )
         # first part is path; second part is path filter
         self.path = path[0]
@@ -94,7 +94,7 @@ class DatastrucWidget(QWidget):
         # load choices into widget and add render button
         #hbox = QHBoxLayout()
 
-        self.form.addRow("File column selection")
+        self.form.addRow(QLabel("File column selection"))
 
         self.channel_col_menu = QComboBox()
         self.channel_col_menu.addItems(df.columns)
@@ -124,8 +124,8 @@ class DatastrucWidget(QWidget):
         #render_box = QHBoxLayout()
         #render_box.addWidget(render_button)
 
-        self.form.addRow("Histogram settings")
-        
+        self.form.addRow(QLabel("Histogram settings"))
+
 
         # bring it all together
         self.form.addRow(render_button)
@@ -215,7 +215,7 @@ class DatastrucWidget(QWidget):
             self,
             "Open file",
             "/home/some/folder",
-            "Files (*.csv, *.parquet)"
+            "Files (*.csv *.parquet)"
             )
         # first part is path; second part is path filter
         path = path[0]
