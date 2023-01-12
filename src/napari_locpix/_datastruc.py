@@ -8,9 +8,9 @@ SMLM dataitem will be parsed as.
 import numpy as np
 import polars as pl
 import pyarrow.parquet as pq
-#import ast
+import ast
 import os
-#import json
+import json
 
 _interpolate = {
     "log2": lambda d: np.log2(d),
@@ -94,35 +94,6 @@ class item:
                     f"Channels is length {len(channels)}\n"
                     f"These must be the same length!"
                 )
-
-    # def save(self, save_loc):
-    #     """Save the item
-
-    #         Args:
-    #             save_loc (string): Location to save the .pkl file"""
-
-    #     dict = {"name": self.name, "df": self.df, "dim": self.dim,
-    #             "channels": self.channels, "histo": self.histo,
-    #             "histo_edges": self.histo_edges,
-    #             "histo_mask": self.histo_mask,
-    #             "bin_sizes": self.bin_sizes}
-    #     pickle.dump(dict, open(save_loc, "wb"), pickle.HIGHEST_PROTOCOL)
-
-    # def load(self, input_file):
-    #     """ Loads item saved as .pkl file
-
-    #         Args:
-    #             input_file (string) : Location of the .pkl file to
-    #                 load dataitem from"""
-
-    #     with open(input_file, 'rb') as f:
-    #         dict = pickle.load(f)
-    #     self.__init__(name=dict['name'], df=dict['df'], dim=dict['dim'],
-    #                   channels=dict['channels'],
-    #                   histo=dict['histo'],
-    #                   histo_edges=dict['histo_edges'],
-    #                   histo_mask=dict['histo_mask'],
-    #                   bin_sizes=dict['bin_sizes'])
 
     def chan_2_label(self, chan):
         """Returns the label associated with the channel specified
@@ -332,78 +303,6 @@ class item:
             #    .alias("z_pixel")
             # )
 
-    #manual_segment(self, cmap=["green", "red", "blue", "bop purple"]):
-    #"""Manually segment the image (histogram.T). Return the segmented
-    #histogram and extra column in dataframe corresponding to label.
-    #0 should be reserved for background
-
-    #Args:
-    #    cmap (list of strings) : Colourmaps napari uses to
-    #        plot the histograms
-    #"""
-
-    ## if already has gt label raise error
-    #if "gt_label" in self.df.columns:
-    #    raise ValueError(
-    #        "Manual segment cannot be called on a file which\
-    #                      already has gt labels in it"
-    #    )
-
-    #while True:
-    #    if self.dim == 2:
-    #        # overlay all channels for src
-    #        if len(self.channels) != 1:
-    #            # create the viewer and add each channel (first channel on own,
-    #            # then iterate through others)
-    #            colormap_list = cmap
-    #            # note image shape when plotted: [x, y]
-    #            viewer = napari.view_image(
-    #                self.histo[self.channels[0]].T,
-    #                name=f"Channel {self.channels[0]}/{self.chan_2_label(self.channels[0])}",
-    #                rgb=False,
-    #                blending="additive",
-    #                colormap=colormap_list[0],
-    #                gamma=2,
-    #                contrast_limits=[0, 30],
-    #            )
-    #            for index, chan in enumerate(self.channels[1:]):
-    #                viewer.add_image(
-    #                    self.histo[chan].T,
-    #                    name=f"Channel {chan}/{self.chan_2_label(chan)}",
-    #                    rgb=False,
-    #                    blending="additive",
-    #                    colormap=colormap_list[index + 1],
-    #                    gamma=2,
-    #                    contrast_limits=[0, 30],
-    #                )
-    #            napari.run()
-
-    #        # only one channel
-    #        else:
-    #            img = self.histo[self.channels[0]].T
-    #            # create the viewer and add the image
-    #            viewer = napari.view_image(
-    #                img,
-    #                name=f"Channel {self.channels[0]}/{self.chan_2_label(self.channels[0])}",
-    #                rgb=False,
-    #                gamma=2,
-    #                contrast_limits=[0, 30],
-    #            )
-    #            napari.run()
-
-    #        # histogram mask should be assigned to GUI output
-    #        try:
-    #            self.histo_mask = viewer.layers["Labels"].data.T
-    #            break
-    #        except KeyError:
-    #            print("You must add labels!")
-
-    #    elif self.dim == 3:
-    #        print("segment 3D image")
-
-    ## segment the coordinates
-    #self._manual_seg_pixel_2_coord()
-
     def _manual_seg_pixel_2_coord(self):
         """Get the localisations associated with manual annotation.
         Each integer should represent a different label, where 0 is reserved
@@ -441,202 +340,129 @@ class item:
         elif self.dim == 3:
             print("segment the 3d coords")
 
-    #def mask_pixel_2_coord(self, img_mask: np.ndarray) -> pl.DataFrame:
-    #    """For a given mask over the image (value at each pixel
-    #    normally representing a label), return the dataframe with a column
-    #    giving the value for each localisation. Note that it is
-    #    assumed that the img_mask is a mask of the image,
-    #    therefore have to transpose img_mask for it to be in the same
-    #    configuration as the histogram
-#
-    #    Note we also use this for  labels and when
-    #    the img_mask represents probabilities.
-#
-    #    Args:
-    #        img_mask (np.ndarray): Mask over the image -
-    #        to reiterate, to convert this to histogram space need
-    #        to transpose it
-#
-    #    Returns:
-    #        df (polars dataframe): Original dataframe with
-    #        additional column with the predicted label"""
-#
-    #    if self.dim == 2:
-    #        # list of mask dataframes, each mask dataframe contains
-    #        # (x,y,label) columns
-    #        # transpose the image mask to histogram space
-    #        histo_mask = img_mask.T
-#
-    #        # create dataframe
-    #        flatten_mask = np.ravel(histo_mask)
-    #        mesh_grid = np.meshgrid(
-    #            range(histo_mask.shape[0]), range(histo_mask.shape[1])
-    #        )
-    #        x_pixel = np.ravel(mesh_grid[1])
-    #        y_pixel = np.ravel(mesh_grid[0])
-    #        label = flatten_mask
-    #        data = {"x_pixel": x_pixel, "y_pixel": y_pixel, "pred_label": label}
-    #        mask_df = pl.DataFrame(
-    #            data,
-    #            columns=[
-    #                ("x_pixel", pl.Int64),
-    #                ("y_pixel", pl.Int64),
-    #                ("pred_label", pl.Float64),
-    #            ],
-    #        ).sort(["x_pixel", "y_pixel"])
-#
-    #        # sanity check
-    #        # print(len(self.df))
-    #        # print(self.df.columns)
-    #        # print(self.df.head(10))
-#
-    #        # join mask dataframe
-    #        df = self.df.join(mask_df, how="inner", on=["x_pixel", "y_pixel"])
-#
-    #        # sanity check
-    #        # print(len(df))
-    #        # print(df.columns)
-    #        # print(df.head(10))
-#
-    #        return df
-#
-    #    elif self.dim == 3:
-    #        print("segment the 3d coords")
 
-    #ef save_df_to_csv(
-    #   self, csv_loc, drop_zero_label=False, drop_pixel_col=True, save_chan_label=True
-    #:
-    #   """Save the dataframe to a .csv with option to:
-    #           drop positions which are background
-    #           drop the column containing pixel information
-    #           save additional column with labels for each
-    #               localisation
+    def save_df_to_csv(
+       self, csv_loc, drop_zero_label=False, drop_pixel_col=True, save_chan_label=True):
+       """Save the dataframe to a .csv with option to:
+               drop positions which are background
+               drop the column containing pixel information
+               save additional column with labels for each
+                   localisation
+       Args:
+           csv_loc (String): Save the csv to this location
+           drop_zero_label (bool): If True then only non zero
+               label positions are saved to csv
+           drop_pixel_col (bool): If True then don't save
+               the column with x,y,z pixel
+           save_chan_label (bool) : If True then save an
+               additional column for each localisation
+               containing the label for each channel
+       Returns:
+           None"""
+       save_df = self.df
+       if drop_pixel_col:
+           # don't want to save x,y pixel to csv
+           save_df = save_df.drop("x_pixel")
+           save_df = save_df.drop("y_pixel")
+           if self.dim == 3:
+               save_df = save_df.drop("z_pixel")
+       # rearrange so x,y,z, ...,labels,channels
+       # if self.dim == 2:
+       #    cols = ['x', 'y', 'gt_label', 'channel']
+       # elif self.dim == 3:
+       #    cols = ['x', 'y', 'z', 'gt_label', 'channel']
+       # save_df_cols = save_df.columns
+       # cols = [col for col in cols if col in save_df_cols] +
+       # [col for col in save_df_cols if col #]not in cols]
+       # save_df = save_df[cols]
+       # drop rows with zero label
+       if drop_zero_label:
+           save_df = save_df.filter(pl.col("gt_label") != 0)
+       # save channel label as well
+       if save_chan_label:
+           label_df = pl.DataFrame({"chan_label": self.channel_label}).with_row_count(
+               "channel"
+           )
+           label_df = label_df.with_column(pl.col("channel").cast(pl.Int64))
+           save_df = save_df.join(label_df, on="channel", how="inner")
+       # save to location
+       save_df.write_csv(csv_loc, sep=",")
 
-    #   Args:
-    #       csv_loc (String): Save the csv to this location
-    #       drop_zero_label (bool): If True then only non zero
-    #           label positions are saved to csv
-    #       drop_pixel_col (bool): If True then don't save
-    #           the column with x,y,z pixel
-    #       save_chan_label (bool) : If True then save an
-    #           additional column for each localisation
-    #           containing the label for each channel
+    def save_to_parquet(
+        self,
+        save_loc,
+        drop_zero_label=False,
+        drop_pixel_col=False,
+        gt_label_map=None,
+        overwrite=False,
+    ):
+        """Save the dataframe to a parquet with option to drop positions which
+           are background and can drop the column containing pixel
+           information
 
-    #   Returns:
-    #       None"""
+        Args:
+            save_loc (String): Save the parquet here
+            drop_zero_label (bool): If True then only non zero
+                label positions are saved to parquet
+            drop_pixel_col (bool): If True then don't save
+                the column with x,y,z pixel
+            gt_label_map (dict): Dictionary with integer keys
+                representing the gt labels for each localisation
+                with value being a string, representing the
+                real concept e.g. 0:'dog', 1:'cat'
+            overwrite (bool): Whether to overwrite
 
-    #   save_df = self.df
+        Returns:
+            None
+        """
 
-    #   if drop_pixel_col:
-    #       # don't want to save x,y pixel to csv
-    #       save_df = save_df.drop("x_pixel")
-    #       save_df = save_df.drop("y_pixel")
-    #       if self.dim == 3:
-    #           save_df = save_df.drop("z_pixel")
+        save_df = self.df
 
-    #   # rearrange so x,y,z, ...,labels,channels
-    #   # if self.dim == 2:
-    #   #    cols = ['x', 'y', 'gt_label', 'channel']
-    #   # elif self.dim == 3:
-    #   #    cols = ['x', 'y', 'z', 'gt_label', 'channel']
-    #   # save_df_cols = save_df.columns
-    #   # cols = [col for col in cols if col in save_df_cols] +
-    #   # [col for col in save_df_cols if col #]not in cols]
-    #   # save_df = save_df[cols]
+        if drop_pixel_col:
+            # don't want to save x,y pixel to csv
+            save_df = save_df.drop("x_pixel")
+            save_df = save_df.drop("y_pixel")
+            if self.dim == 3:
+                save_df = save_df.drop("z_pixel")
 
-    #   # drop rows with zero label
-    #   if drop_zero_label:
-    #       save_df = save_df.filter(pl.col("gt_label") != 0)
+        # drop rows with zero label
+        if drop_zero_label:
+            save_df = save_df.filter(pl.col("gt_label") != 0)
 
-    #   # save channel label as well
-    #   if save_chan_label:
-    #       label_df = pl.DataFrame({"chan_label": self.channel_label}).with_row_count(
-    #           "channel"
-    #       )
-    #       label_df = label_df.with_column(pl.col("channel").cast(pl.Int64))
-    #       save_df = save_df.join(label_df, on="channel", how="inner")
+        # convert to arrow + add in metadata if doesn't exist
+        arrow_table = save_df.to_arrow()
 
-    #   # save to location
-    #   save_df.write_csv(csv_loc, sep=",")
+        # convert gt label map to bytes
+        old_metadata = arrow_table.schema.metadata
 
-    # def save_to_parquet(
-    #    self,
-    #    save_folder,
-    #    drop_zero_label=False,
-    #    drop_pixel_col=False,
-    #    gt_label_map=None,
-    #    overwrite=False,
-    #):
-    #    """Save the dataframe to a parquet with option to drop positions which
-    #       are background and can drop the column containing pixel
-    #       information
-#
-    #    Args:
-    #        save_folder (String): Save the df to this folder
-    #        drop_zero_label (bool): If True then only non zero
-    #            label positions are saved to parquet
-    #        drop_pixel_col (bool): If True then don't save
-    #            the column with x,y,z pixel
-    #        gt_label_map (dict): Dictionary with integer keys
-    #            representing the gt labels for each localisation
-    #            with value being a string, representing the
-    #            real concept e.g. 0:'dog', 1:'cat'
-    #        overwrite (bool): Whether to overwrite
-#
-    #    Returns:
-    #        None
-    #    """
-#
-    #    save_df = self.df
-#
-    #    if drop_pixel_col:
-    #        # don't want to save x,y pixel to csv
-    #        save_df = save_df.drop("x_pixel")
-    #        save_df = save_df.drop("y_pixel")
-    #        if self.dim == 3:
-    #            save_df = save_df.drop("z_pixel")
-#
-    #    # drop rows with zero label
-    #    if drop_zero_label:
-    #        save_df = save_df.filter(pl.col("gt_label") != 0)
-#
-    #    # convert to arrow + add in metadata if doesn't exist
-    #    arrow_table = save_df.to_arrow()
-#
-    #    # convert gt label map to bytes
-    #    old_metadata = arrow_table.schema.metadata
-#
-    #    # convert to bytes
-    #    gt_label_map = json.dumps(gt_label_map).encode("utf-8")
-    #    meta_data = {
-    #        "name": self.name,
-    #        "dim": str(self.dim),
-    #        "channels": str(self.channels),
-    #        "channel_label": str(self.channel_label),
-    #        "gt_label_map": gt_label_map,
-    #        "bin_sizes": str(self.bin_sizes),
-    #    }
-#
-    #    # add in label mapping
-    #    # meta_data.update(gt_label_map)
-    #    # merge existing with new meta data
-    #    merged_metadata = {**meta_data, **(old_metadata or {})}
-    #    arrow_table = arrow_table.replace_schema_metadata(merged_metadata)
-    #    save_loc = os.path.join(
-    #        save_folder, self.name + ".parquet"
-    #    )  # note if change this need to adjust annotate.py
-    #    if os.path.exists(save_loc) and not overwrite:
-    #        raise ValueError(
-    #            "Cannot overwite. If you want to overwrite please set overwrite==True"
-    #        )
-    #    pq.write_table(arrow_table, save_loc)
-#
-    #    # To access metadata write
-    #    # parquet_table = pq.read_table(file_path)
-    #    # parquet_table.schema.metadata ==> metadata
-    #    # note if accessing keys need
-    #    # parquet_table.schema.metadata[b'key_name'])
-    #    # note that b is bytes
+        # convert to bytes
+        gt_label_map = json.dumps(gt_label_map).encode("utf-8")
+        meta_data = {
+            "name": self.name,
+            "dim": str(self.dim),
+            "channels": str(self.channels),
+            "channel_label": str(self.channel_label),
+            "gt_label_map": gt_label_map,
+            "bin_sizes": str(self.bin_sizes),
+        }
+
+        # add in label mapping
+        # meta_data.update(gt_label_map)
+        # merge existing with new meta data
+        merged_metadata = {**meta_data, **(old_metadata or {})}
+        arrow_table = arrow_table.replace_schema_metadata(merged_metadata)
+        if os.path.exists(save_loc) and not overwrite:
+            raise ValueError(
+                "Cannot overwite. If you want to overwrite please set overwrite==True"
+            )
+        pq.write_table(arrow_table, save_loc)
+
+        # To access metadata write
+        # parquet_table = pq.read_table(file_path)
+        # parquet_table.schema.metadata ==> metadata
+        # note if accessing keys need
+        # parquet_table.schema.metadata[b'key_name'])
+        # note that b is bytes
 
     def load_from_parquet(self, input_file):
         """Loads item saved as .parquet file
@@ -680,91 +506,6 @@ class item:
             gt_label_map=gt_label_map,
             bin_sizes=bin_sizes,
         )
-
-    # def get_img_dict(self):
-    #    """Return dictionary of images,
-    #    where each key represents a channel"""
-
-    #    img_dict = {}
-    #    for key, value in self.histo.items():
-    #        img_dict[key] = value.T
-    #
-    #    return img_dict
-
-    #def render_histo(self, labels=None):
-    #    """Render the histogram from the .parquet file
-#
-    #    If labels are specified then the histogram is rendered in the order
-    #    of these lables
-    #    If not specified defaults to rendering in the channels specified
-    #    in order by user e.g. [0,3,1,2]
-    #    Assumes localisations have associated x_pixel and y_pixel already.
-#
-    #    Args:
-    #        labels (list) : Order of labels to stack histograms in
-    #            e.g. labels=['egfr','ereg'] means all images will
-    #            be returned with egfr in channel 0 and ereg in
-    #            channel 1
-#
-    #    Returns:
-    #        histo (np.histogram) : Histogram of the localisation data
-    #        channel_map (list) : List where the first value is the
-    #            channel in the first axis of the histogram, second value
-    #            is the channel in the second axis of the histogram etc.
-    #            e.g. [1,3] : 1st channel is in 1st axis, 3rd channel in 2nd axis
-    #        label_map (list) : List where the first value is the
-    #            label in the first axis of the histogram, second value
-    #            is the channel in the second axis of the histogram etc.
-    #            e.g. ['egfr','ereg'] : egfr is in 1st axis, ereg in 2nd axis
-    #    """
-#
-    #    histos = []
-#
-    #    df_max = self.df.max()
-    #    x_bins = df_max["x_pixel"][0] + 1
-    #    y_bins = df_max["y_pixel"][0] + 1
-#
-    #    if labels is None:
-    #        channels = self.channels
-    #        label_map = [self.chan_2_label(chan) for chan in channels]
-#
-    #    else:
-    #        channels = [self.label_2_chan(label) for label in labels]
-    #        label_map = labels
-#
-    #    for chan in channels:
-    #        df = self.df.filter(pl.col("channel") == chan)
-#
-    #        histo = np.empty((x_bins, y_bins))
-    #        df = df.groupby(by=["x_pixel", "y_pixel"]).count()
-    #        x_pixels = df["x_pixel"].to_numpy()
-    #        y_pixels = df["y_pixel"].to_numpy()
-    #        counts = df["count"].to_numpy()
-    #        histo[x_pixels, y_pixels] = counts
-#
-    #        histos.append(histo)
-#
-    #    histo = np.stack(histos)
-    #    channel_map = channels
-#
-    #    return histo, channel_map, label_map
-#
-    #def render_seg(self):
-    #    """Render the segmentation of the histogram"""
-#
-    #    labels = self.df.select(pl.col("gt_label")).to_numpy()
-    #    x_pixels = self.df.select(pl.col("x_pixel")).to_numpy()
-    #    y_pixels = self.df.select(pl.col("y_pixel")).to_numpy()
-#
-    #    histo_width = np.max(x_pixels) + 1
-    #    histo_height = np.max(y_pixels) + 1
-#
-    #    histo = np.empty((histo_width, histo_height))
-#
-    #    histo[x_pixels, y_pixels] = labels
-#
-    #    return histo
-
 
 def file_to_datastruc(
         input_file,

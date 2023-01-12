@@ -1,18 +1,16 @@
 """
-This module is an example of a barebones QWidget plugin for napari
+This module contains the main Widget plugin
 
 It implements the Widget specification.
 see: https://napari.org/stable/plugins/guides.html?#widgets
 
-Replace code below according to your needs.
 """
 from typing import TYPE_CHECKING
 
-from magicgui import magic_factory
 from qtpy.QtWidgets import QHBoxLayout, QPushButton, QWidget
-from qtpy.compat import getopenfilename
+from qtpy.compat import getopenfilename, getsavefilename
 
-from ._datastruc import file_to_datastruc
+from ._datastruc import file_to_datastruc, item
 
 if TYPE_CHECKING:
     import napari
@@ -49,19 +47,19 @@ class DatastrucWidget(QWidget):
         print("napari has", len(self.viewer.layers), "layers")
 
         # specify information want to generalise
-        cmap=["green", "red", "blue", "bop purple"]
-        dim=2
-        channel_col="Channel"
-        frame_col="Frame"
-        x_col="X (nm)"
-        y_col="Y (nm)"
-        z_col=None
-        channel_choice=[0,1,2,3]
-        channel_label=['egfr','ereg','unk','unk']
-        x_bins=500
-        y_bins=500
-        z_bins=None
-        vis_interpolation='log2'
+        self.cmap=["green", "red", "blue", "bop purple"]
+        self.dim=2
+        self.channel_col="Channel"
+        self.frame_col="Frame"
+        self.x_col="X (nm)"
+        self.y_col="Y (nm)"
+        self.z_col=None
+        self.channel_choice=[0,1,2,3]
+        self.channel_label=['egfr','ereg','unk','unk']
+        self.x_bins=500
+        self.y_bins=500
+        self.z_bins=None
+        self.vis_interpolation='log2'
 
         # load data into datastruc
         path = getopenfilename(
@@ -76,44 +74,49 @@ class DatastrucWidget(QWidget):
             file_type = 'csv'
         elif path.endswith(".parquet"):
             file_type = 'parquet'
-        datastruc = file_to_datastruc(path,
+        self.datastruc = file_to_datastruc(path,
                                       file_type,
-                                      dim,
-                                      channel_col,
-                                      frame_col,
-                                      x_col,
-                                      y_col,
-                                      z_col,
-                                      channel_choice=channel_choice,
-                                      channel_label=channel_label,
+                                      self.dim,
+                                      self.channel_col,
+                                      self.frame_col,
+                                      self.x_col,
+                                      self.y_col,
+                                      self.z_col,
+                                      channel_choice=self.channel_choice,
+                                      channel_label=self.channel_label,
                                       )
 
-        # assign datastruc to the widget
-        self.datastruc = datastruc
+        # render histogram
+        self._render_histo()
+
+    def _render_histo(self):
 
         # generate histogram
-        if dim == 2:
-            histo_size = (x_bins, y_bins)
-        elif dim ==3:
+        if self.dim == 2:
+            histo_size = (self.x_bins, self.y_bins)
+        elif self.dim ==3:
             raise ValueError("No 3D capability atm")
         #    histo_size = (x_bins, y_bins, z_bins)
-        datastruc.coord_2_histo(
+        self.datastruc.coord_2_histo(
             histo_size,
-            vis_interpolation=vis_interpolation
+            vis_interpolation=self.vis_interpolation
         )
 
+        # clear images
+        self.viewer.layers.clear()
+
         # render histogram
-        if dim == 2:
+        if self.dim == 2:
                 # overlay all channels for src
-                if len(datastruc.channels) != 1:
+                if len(self.datastruc.channels) != 1:
                     # create the viewer and add each channel (first channel on own,
                     # then iterate through others)
-                    colormap_list = cmap
+                    colormap_list = self.cmap
                     # note image shape when plotted: [x, y]
-                    for index, chan in enumerate(datastruc.channels):
+                    for index, chan in enumerate(self.datastruc.channels):
                         self.viewer.add_image(
-                            datastruc.histo[chan].T,
-                            name=f"Channel {chan}/{datastruc.chan_2_label(chan)}",
+                            self.datastruc.histo[chan].T,
+                            name=f"Channel {chan}/{self.datastruc.chan_2_label(chan)}",
                             rgb=False,
                             blending="additive",
                             colormap=colormap_list[index],
@@ -123,33 +126,99 @@ class DatastrucWidget(QWidget):
 
                 # only one channel
                 else:
-                    img = datastruc.histo[datastruc.channels[0]].T
+                    img = self.datastruc.histo[self.datastruc.channels[0]].T
                     # create the viewer and add the image
                     viewer = napari.add_image(
                         img,
-                        name=f"Channel {datastruc.channels[0]}/{datastruc.chan_2_label(datastruc.channels[0])}",
+                        name=f"Channel {self.datastruc.channels[0]}/{self.datastruc.chan_2_label(self.datastruc.channels[0])}",
                         rgb=False,
                         gamma=2,
                         contrast_limits=[0, 30],
                     )
 
-        elif dim == 3:
+        elif self.dim == 3:
             print("segment 3D image")
 
+    def _load_annot_data(self):
 
-    def _write_data(self):
+        # get path
+        path = getopenfilename(
+            self,
+            "Open file",
+            "/home/some/folder",
+            "Files (*.csv, *.parquet)"
+            )
+        # first part is path; second part is path filter
+        path = path[0]
+        if path.endswith(".csv"):
+            file_type = 'csv'
+        elif path.endswith(".parquet"):
+            file_type = 'parquet'
+
+        # load in
+        if file_type == '.parquet':
+            self.datastruc = item.load_from_parquet(path)
+        elif file_type == '.csv':
+            raise ValueError('Not implemented yet!')
+
+        # render
+        self._render_histo()
+
+
+    def _write_csv(self):
+
+        # get path
+        path = getsavefilename(
+            self,
+            "Save file",
+            f"/home/some/folder/{self.datastruc.name}.csv",
+            "Files (*.csv)"
+            )
+        # first part is path; second part is path filter
+        path = path[0]
+
+        # convert pixel labels to coordinate
+        try:
+            self.datastruc.histo_mask = self.viewer.layers["Labels"].data.T
+            self.datastruc._manual_seg_pixel_2_coord()
+        except KeyError:
+            print("No labels saved")
         
-        # write datastruc to file
+        # save to this location
+        self.datastruc.save_df_to_csv(
+            path,
+            drop_zero_label=False,
+            drop_pixel_col=False,
+            save_chan_label=True,
+        )
 
+    def _write_parquet(self):
 
+        # specified but need to change
+        gt_label_map = {0:'background', 1:'membrane'}
 
-@magic_factory
-def example_magic_widget(img_layer: "napari.layers.Image"):
-    print(f"you have selected {img_layer}")
+        # get path
+        path = getsavefilename(
+            self,
+            "Save file",
+            f"/home/some/folder/{self.datastruc.name}.parquet",
+            "Files (*.parquet)"
+            )
+        # first part is path; second part is path filter
+        path = path[0]
 
-
-# Uses the `autogenerate: true` flag in the plugin manifest
-# to indicate it should be wrapped as a magicgui to autogenerate
-# a widget.
-def example_function_widget(img_layer: "napari.layers.Image"):
-    print(f"you have selected {img_layer}")
+        # convert pixel labels to coordinate
+        try:
+            self.datastruc.histo_mask = self.viewer.layers["Labels"].data.T
+            self.datastruc._manual_seg_pixel_2_coord()
+        except KeyError:
+            print("No labels saved")
+        
+        # save to this location
+        self.datastruc.save_to_parquet(
+            path,
+            drop_zero_label=False,
+            drop_pixel_col=False,
+            gt_label_map=gt_label_map,
+            overwrite=False,
+        )
