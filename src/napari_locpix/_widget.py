@@ -68,6 +68,7 @@ class DatastrucWidget(QWidget):
         # specify information want to generalise
         self.cmap=["green", "red", "blue", "bop purple"]
         self.dim=2
+        self.z_col=None
         self.channel_choice=[0,1,2,3]
         self.channel_label=['egfr','ereg','unk','unk']
         self.x_bins=500
@@ -92,14 +93,10 @@ class DatastrucWidget(QWidget):
             df = pl.scan_parquet(self.path)
 
         # load choices into widget and add render button
-        #hbox = QHBoxLayout()
-
         self.form.addRow(QLabel("File column selection"))
 
         self.channel_col_menu = QComboBox()
         self.channel_col_menu.addItems(df.columns)
-        #hbox.addWidget(QLabel("Channel col"))
-        #hbox.addWidget(self.channel_col_menu)
         self.form.addRow("Channel: ", self.channel_col_menu)
 
         self.frame_col_menu = QComboBox()
@@ -121,10 +118,11 @@ class DatastrucWidget(QWidget):
         # render button
         render_button = QPushButton("Render")
         render_button.clicked.connect(self._render_button)
-        #render_box = QHBoxLayout()
-        #render_box.addWidget(render_button)
+
 
         self.form.addRow(QLabel("Histogram settings"))
+
+
 
 
         # bring it all together
@@ -139,8 +137,6 @@ class DatastrucWidget(QWidget):
         self.x_col = self.x_col_menu.currentText()
         self.y_col = self.y_col_menu.currentText()
         #self.z_col = self.z_col_menu.currentText()
-        self.z_col = None
-
 
         self.datastruc = file_to_datastruc(self.path,
                                       self.file_type,
