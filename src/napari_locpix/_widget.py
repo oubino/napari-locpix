@@ -7,10 +7,11 @@ see: https://napari.org/stable/plugins/guides.html?#widgets
 """
 from typing import TYPE_CHECKING
 
-from qtpy.QtWidgets import QHBoxLayout, QPushButton, QWidget
+from qtpy.QtWidgets import QHBoxLayout, QVBoxLayout, QPushButton, QWidget, QComboBox, QFormLayout, QLabel
 from qtpy.compat import getopenfilename, getsavefilename
 
 from ._datastruc import file_to_datastruc, item
+import polars as pl
 
 if TYPE_CHECKING:
     import napari
@@ -25,11 +26,21 @@ class DatastrucWidget(QWidget):
         super().__init__()
         self.viewer = napari_viewer
 
+        self.form = QFormLayout()
+
+        # load data
+
         load_raw_btn = QPushButton("Load raw data")
         load_raw_btn.clicked.connect(self._load_raw_data)
 
         load_annot_btn = QPushButton("Load annotated data")
         load_annot_btn.clicked.connect(self._load_annot_data)
+
+        load_box = QHBoxLayout()
+        load_box.addWidget(load_raw_btn)
+        load_box.addWidget(load_annot_btn)
+
+        # write data
 
         write_csv_btn = QPushButton("Write to csv")
         write_csv_btn.clicked.connect(self._write_csv)
@@ -37,11 +48,19 @@ class DatastrucWidget(QWidget):
         write_parquet_btn = QPushButton("Write to parquet")
         write_parquet_btn.clicked.connect(self._write_parquet)
 
-        self.setLayout(QHBoxLayout())
-        self.layout().addWidget(load_raw_btn)
-        self.layout().addWidget(load_annot_btn)
-        self.layout().addWidget(write_csv_btn)
-        self.layout().addWidget(write_parquet_btn)
+        write_box = QHBoxLayout()
+        write_box.addWidget(write_csv_btn)
+        write_box.addWidget(write_parquet_btn)
+
+        # bring together
+        self.form.addRow(load_box)
+        self.form.addRow(write_box)
+
+        self.setLayout(self.form)
+        #self.layout().addWidget(load_raw_btn)
+        #self.layout().addWidget(load_annot_btn)
+        #self.layout().addWidget(write_csv_btn)
+        #self.layout().addWidget(write_parquet_btn)
 
     def _load_raw_data(self):
         print("napari has", len(self.viewer.layers), "layers")
@@ -49,11 +68,6 @@ class DatastrucWidget(QWidget):
         # specify information want to generalise
         self.cmap=["green", "red", "blue", "bop purple"]
         self.dim=2
-        self.channel_col="Channel"
-        self.frame_col="Frame"
-        self.x_col="X (nm)"
-        self.y_col="Y (nm)"
-        self.z_col=None
         self.channel_choice=[0,1,2,3]
         self.channel_label=['egfr','ereg','unk','unk']
         self.x_bins=500
@@ -69,13 +83,67 @@ class DatastrucWidget(QWidget):
             "Files (*.csv, *.parquet)"
             )
         # first part is path; second part is path filter
-        path = path[0]
-        if path.endswith(".csv"):
-            file_type = 'csv'
-        elif path.endswith(".parquet"):
-            file_type = 'parquet'
-        self.datastruc = file_to_datastruc(path,
-                                      file_type,
+        self.path = path[0]
+        if self.path.endswith(".csv"):
+            self.file_type = 'csv'
+            df = pl.scan_csv(self.path)
+        elif self.path.endswith(".parquet"):
+            self.file_type = 'parquet'
+            df = pl.scan_parquet(self.path)
+
+        # load choices into widget and add render button
+        #hbox = QHBoxLayout()
+
+        self.form.addRow("File column selection")
+
+        self.channel_col_menu = QComboBox()
+        self.channel_col_menu.addItems(df.columns)
+        #hbox.addWidget(QLabel("Channel col"))
+        #hbox.addWidget(self.channel_col_menu)
+        self.form.addRow("Channel: ", self.channel_col_menu)
+
+        self.frame_col_menu = QComboBox()
+        self.frame_col_menu.addItems(df.columns)
+        self.form.addRow("Frame: ", self.frame_col_menu)
+
+        self.x_col_menu = QComboBox()
+        self.x_col_menu.addItems(df.columns)
+        self.form.addRow("x: ", self.x_col_menu)
+
+        self.y_col_menu = QComboBox()
+        self.y_col_menu.addItems(df.columns)
+        self.form.addRow("y: ", self.y_col_menu)
+
+        #z_col_menu = QComboBox()
+        #z_col_menu.addItems(df.columns)
+        #self.form.addRow("Channel col", self.z_col_menu)
+
+        # render button
+        render_button = QPushButton("Render")
+        render_button.clicked.connect(self._render_button)
+        #render_box = QHBoxLayout()
+        #render_box.addWidget(render_button)
+
+        self.form.addRow("Histogram settings")
+        
+
+        # bring it all together
+        self.form.addRow(render_button)
+        
+        
+    def _render_button(self):
+
+        # parse the options
+        self.channel_col = self.channel_col_menu.currentText()
+        self.frame_col = self.frame_col_menu.currentText()
+        self.x_col = self.x_col_menu.currentText()
+        self.y_col = self.y_col_menu.currentText()
+        #self.z_col = self.z_col_menu.currentText()
+        self.z_col = None
+
+
+        self.datastruc = file_to_datastruc(self.path,
+                                      self.file_type,
                                       self.dim,
                                       self.channel_col,
                                       self.frame_col,
@@ -88,6 +156,7 @@ class DatastrucWidget(QWidget):
 
         # render histogram
         self._render_histo()
+
 
     def _render_histo(self):
 
