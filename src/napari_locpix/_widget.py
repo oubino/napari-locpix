@@ -65,11 +65,15 @@ class DatastrucWidget(QWidget):
     def _load_raw_data(self):
         print("napari has", len(self.viewer.layers), "layers")
 
-        # specify information want to generalise
+        # if user wants to change cmap let them do this in napari
+        # post rendering
         self.cmap=["green", "red", "blue", "bop purple"]
+
+        # this will change if allow for 3D
         self.dim=2
         self.z_col=None
-        self.channel_choice=[0,1,2,3]
+
+
         self.channel_label=['egfr','ereg','unk','unk']
         self.x_bins=500
         self.y_bins=500
@@ -146,7 +150,6 @@ class DatastrucWidget(QWidget):
                                       self.x_col,
                                       self.y_col,
                                       self.z_col,
-                                      channel_choice=self.channel_choice,
                                       channel_label=self.channel_label,
                                       )
 

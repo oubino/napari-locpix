@@ -516,7 +516,6 @@ def file_to_datastruc(
         x_col,
         y_col,
         z_col,
-        channel_choice=None,
         channel_label=None,
     ):
         """Loads in .csv or .parquet and converts to the required datastructure.
@@ -536,8 +535,6 @@ def file_to_datastruc(
             x_col (string) : Name of column which gives x for localisation
             y_col (string) : Name of column which gives y for localisation
             z_col (string) : Name of column which gives z for localisation
-            channel_choice (list of ints) : If specified then this will be list
-                of integers representing channels to be considered
             channel_label (list of strings) : If specified then this is the
                 label for each channel i.e. ['egfr', 'ereg','unk'] means
                 channel 0 is egfr protein, channel 1 is ereg proteins and
@@ -589,12 +586,8 @@ def file_to_datastruc(
                 }
             )
 
-        # Specify channels to consider
-        # if channel_choice is None:
-        #    channels = df["channel"].unique()
-        #    channels = sorted(channels)
-        # else:
-        channels = channel_choice
+        channels = df["channel"].unique()
+        channels = sorted(channels)
 
         # Get name of file - assumes last part of input file name
         if file_type == "csv":
