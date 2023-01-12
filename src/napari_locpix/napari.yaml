@@ -14,9 +14,9 @@ contributions:
     - id: napari-locpix.make_sample_data
       python_name: napari_locpix._sample_data:make_sample_data
       title: Load sample data from napari-locpix
-    - id: napari-locpix.make_qwidget
-      python_name: napari_locpix._widget:ExampleQWidget
-      title: Make example QWidget
+    - id: napari-locpix.widget
+      python_name: napari_locpix._widget:DatastrucWidget
+      title: Make QWidget
     - id: napari-locpix.make_magic_widget
       python_name: napari_locpix._widget:example_magic_widget
       title: Make example magic widget
@@ -42,7 +42,7 @@ contributions:
       display_name: napari-locpix
       key: unique_id.1
   widgets:
-    - command: napari-locpix.make_qwidget
+    - command: napari-locpix.widget
       display_name: Example QWidget
     - command: napari-locpix.make_magic_widget
       display_name: Example Magic Widget

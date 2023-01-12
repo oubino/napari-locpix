@@ -6,13 +6,11 @@ SMLM dataitem will be parsed as.
 """
 
 import numpy as np
-import napari
-import matplotlib.pyplot as plt
 import polars as pl
 import pyarrow.parquet as pq
-import ast
+#import ast
 import os
-import json
+#import json
 
 _interpolate = {
     "log2": lambda d: np.log2(d),
@@ -241,7 +239,8 @@ class item:
                 # localisations
                 self.histo[chan], _ = np.histogramdd(sample, bins=self.histo_edges)
 
-        plt.close()
+
+        # plt.close()
 
         # work out pixel for each localisations
         self._coord_2_pixel()
@@ -858,8 +857,8 @@ def file_to_datastruc(
 
         # Get name of file - assumes last part of input file name
         if file_type == "csv":
-            name = os.path.basename(os.path.normpath(input_file)).removesuffix(".csv")
+            name = os.path.basename(os.path.normpath(input_file))[:-4]
         elif file_type == "parquet":
-            name = os.path.basename(os.path.normpath(input_file)).removesuffix(".parquet")
+            name = os.path.basename(os.path.normpath(input_file))[:-8]
 
         return item(name, df, dim, channels, channel_label)

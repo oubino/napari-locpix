@@ -12,6 +12,7 @@ import pyarrow as pq
 import numpy as np
 from typing import Union, Sequence, Callable, List
 from ._datastruc import item, file_to_datastruc
+from ._widget import DatastrucWidget
 
 PathLike = str
 PathOrPaths = Union[PathLike, Sequence[PathLike]]
@@ -75,12 +76,15 @@ def reader_function(path):
     if path.endwith(".csv"):
         datastruc = file_to_datastruc(path, "csv", )
     elif path.endwith(".parquet"):
-        datastruc = file_to_datastruc(path, "parquet", )
+        datastruc = file_to_datastruc(path,
+                                      "parquet",
+                                      )
     histo = datastruc.coord_to_histo()
 
     # display histogram in napari
 
     # also store the datastructure in a widget
+    widget = DatastrucWidget()
 
     # widget should display:
     # file name
