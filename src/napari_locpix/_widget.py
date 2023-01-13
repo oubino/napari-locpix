@@ -7,7 +7,8 @@ see: https://napari.org/stable/plugins/guides.html?#widgets
 """
 from typing import TYPE_CHECKING
 
-from qtpy.QtWidgets import QHBoxLayout, QVBoxLayout, QPushButton, QWidget, QComboBox, QFormLayout, QLabel
+from qtpy.QtWidgets import QHBoxLayout, QVBoxLayout, QStackedLayout, QListWidget, QPushButton, QWidget, QComboBox, QFormLayout, QLabel, QLineEdit
+from qtpy.QtGui import QIntValidator
 from qtpy.compat import getopenfilename, getsavefilename
 
 from ._datastruc import file_to_datastruc, item
@@ -26,7 +27,11 @@ class DatastrucWidget(QWidget):
         super().__init__()
         self.viewer = napari_viewer
 
-        self.form = QFormLayout()
+        # main layout
+        self.outer_layout = QVBoxLayout()
+
+        # load data, write data v box
+        io = QVBoxLayout()
 
         # load data
 
@@ -52,33 +57,109 @@ class DatastrucWidget(QWidget):
         write_box.addWidget(write_csv_btn)
         write_box.addWidget(write_parquet_btn)
 
-        # bring together
-        self.form.addRow(load_box)
-        self.form.addRow(write_box)
+        # bring together io
+        io.addLayout(load_box)
+        io.addLayout(write_box)
 
-        self.setLayout(self.form)
+
+        #self.setLayout(self.form)
         #self.layout().addWidget(load_raw_btn)
         #self.layout().addWidget(load_annot_btn)
         #self.layout().addWidget(write_csv_btn)
         #self.layout().addWidget(write_parquet_btn)
 
+        # link label button
+        #self._link()
+
+        # stacked layout for the options
+        self.stackedLayout = QStackedLayout()
+
+        # load raw data form
+        load_raw_data_widget = QWidget()
+        load_raw_data_form = QFormLayout()
+
+        # load choices into widget and add render button
+        load_raw_data_form.addRow(QLabel("File column selection"))
+
+        self.channel_col_menu = QComboBox()
+        load_raw_data_form.addRow("Channel: ", self.channel_col_menu)
+
+        self.frame_col_menu = QComboBox()
+        load_raw_data_form.addRow("Frame: ", self.frame_col_menu)
+
+        self.x_col_menu = QComboBox()
+        load_raw_data_form.addRow("x: ", self.x_col_menu)
+
+        self.y_col_menu = QComboBox()
+        load_raw_data_form.addRow("y: ", self.y_col_menu)
+
+        #z_col_menu = QComboBox()
+        #z_col_menu.addItems(df.columns)
+        #load_raw_data_form.addRow("Channel col", self.z_col_menu)
+
+        load_raw_data_form.addRow(QLabel("Channel labels"))
+
+        self.channel_zero_label = QLineEdit("unk")
+        self.channel_zero_label.setToolTip("Protein present in channel zero")
+        load_raw_data_form.addRow("Chan 0 label: ", self.channel_zero_label)
+
+        self.channel_one_label = QLineEdit("unk")
+        self.channel_one_label.setToolTip("Protein present in channel one")
+        load_raw_data_form.addRow("Chan 0 label: ", self.channel_one_label)
+
+        self.channel_two_label = QLineEdit("unk")
+        self.channel_two_label.setToolTip("Protein present in channel two")
+        load_raw_data_form.addRow("Chan 0 label: ", self.channel_two_label)
+
+        self.channel_three_label = QLineEdit("unk")
+        self.channel_three_label.setToolTip("Protein present in channel three")
+        load_raw_data_form.addRow("Chan 0 label: ", self.channel_three_label)
+
+        load_raw_data_form.addRow(QLabel("Histogram settings"))
+
+        self.x_bins_menu = QLineEdit("500")
+        self.x_bins_menu.setValidator(QIntValidator())
+        self.x_bins_menu.setToolTip("Number of bins in x dimension")
+        load_raw_data_form.addRow("X bins", self.x_bins_menu)
+
+        self.y_bins_menu = QLineEdit("500")
+        self.y_bins_menu.setValidator(QIntValidator())
+        self.y_bins_menu.setToolTip("Number of bins in y dimension")
+        load_raw_data_form.addRow("Y bins", self.y_bins_menu)
+
+        self.vis_interpolation_menu = QComboBox()
+        self.vis_interpolation_menu.addItems(["log2", "log10", "linear"])
+        self.vis_interpolation_menu.setToolTip(
+            "Interpolation applied to the histogram when visualising"
+            "the image of the histogram"
+        )
+        load_raw_data_form.addRow("Vis interpolation", self.vis_interpolation_menu)
+
+        # render button
+        self.render_button = QPushButton("Render")  
+        load_raw_data_form.addRow(self.render_button)
+
+        # format layout and add to stacked layout
+        load_raw_data_widget.setLayout(load_raw_data_form)
+        self.stackedLayout.addWidget(load_raw_data_widget)
+
+        # add to main
+        self.outer_layout.addLayout(io)
+        self.outer_layout.addLayout(self.stackedLayout)
+        self.setLayout(self.outer_layout)
+
+
+
     def _load_raw_data(self):
-        print("napari has", len(self.viewer.layers), "layers")
 
         # if user wants to change cmap let them do this in napari
-        # post rendering
+        # post rendering -i.e. keep this as is
         self.cmap=["green", "red", "blue", "bop purple"]
 
         # this will change if allow for 3D
         self.dim=2
         self.z_col=None
-
-
-        self.channel_label=['egfr','ereg','unk','unk']
-        self.x_bins=500
-        self.y_bins=500
         self.z_bins=None
-        self.vis_interpolation='log2'
 
         # load data into datastruc
         path = getopenfilename(
@@ -88,86 +169,85 @@ class DatastrucWidget(QWidget):
             "Files (*.csv *.parquet)"
             )
         # first part is path; second part is path filter
-        self.path = path[0]
-        if self.path.endswith(".csv"):
-            self.file_type = 'csv'
-            df = pl.scan_csv(self.path)
-        elif self.path.endswith(".parquet"):
-            self.file_type = 'parquet'
-            df = pl.scan_parquet(self.path)
+        path = path[0]
+        if path.endswith(".csv"):
+            file_type = 'csv'
+            df = pl.scan_csv(path)
+        elif path.endswith(".parquet"):
+            file_type = 'parquet'
+            df = pl.scan_parquet(path)
 
-        # load choices into widget and add render button
-        self.form.addRow(QLabel("File column selection"))
-
-        self.channel_col_menu = QComboBox()
+        # update form
+        self.stackedLayout.setCurrentIndex(0)
+        self.render_button.clicked.connect(lambda: self._render_button(path, file_type))
         self.channel_col_menu.addItems(df.columns)
-        self.form.addRow("Channel: ", self.channel_col_menu)
-
-        self.frame_col_menu = QComboBox()
         self.frame_col_menu.addItems(df.columns)
-        self.form.addRow("Frame: ", self.frame_col_menu)
-
-        self.x_col_menu = QComboBox()
         self.x_col_menu.addItems(df.columns)
-        self.form.addRow("x: ", self.x_col_menu)
-
-        self.y_col_menu = QComboBox()
         self.y_col_menu.addItems(df.columns)
-        self.form.addRow("y: ", self.y_col_menu)
-
-        #z_col_menu = QComboBox()
-        #z_col_menu.addItems(df.columns)
-        #self.form.addRow("Channel col", self.z_col_menu)
-
-        # render button
-        render_button = QPushButton("Render")
-        render_button.clicked.connect(self._render_button)
 
 
-        self.form.addRow(QLabel("Histogram settings"))
+    def _link(self):
+        
+        #self.viewer.window.
+        self.viewer.window.qt_viewer.QtLabelsControls.selectionSpinBox.valueChanged.connect(self._update_labels)
 
+    def _update_labels(self, value):
 
-
-
-        # bring it all together
-        self.form.addRow(render_button)
+        print('value', value)
         
         
-    def _render_button(self):
+    def _render_button(self, path, file_type):
+
+        print('here 2')
+        
+        # will change
+        z_col = None
+        dim = 2
 
         # parse the options
-        self.channel_col = self.channel_col_menu.currentText()
-        self.frame_col = self.frame_col_menu.currentText()
-        self.x_col = self.x_col_menu.currentText()
-        self.y_col = self.y_col_menu.currentText()
+        channel_col = self.channel_col_menu.currentText()
+        frame_col = self.frame_col_menu.currentText()
+        x_col = self.x_col_menu.currentText()
+        y_col = self.y_col_menu.currentText()
         #self.z_col = self.z_col_menu.currentText()
+        x_bins = int(self.x_bins_menu.text())
+        y_bins = int(self.x_bins_menu.text())
+        #self.z_bins =
+        vis_interpolation =  self.vis_interpolation_menu.currentText()
+        channel_label = [
+            self.channel_zero_label.text(),
+            self.channel_one_label.text(),
+            self.channel_two_label.text(),
+            self.channel_three_label.text(),
+        ]
 
-        self.datastruc = file_to_datastruc(self.path,
-                                      self.file_type,
-                                      self.dim,
-                                      self.channel_col,
-                                      self.frame_col,
-                                      self.x_col,
-                                      self.y_col,
-                                      self.z_col,
-                                      channel_label=self.channel_label,
+        self.datastruc = file_to_datastruc(path,
+                                      file_type,
+                                      dim,
+                                      channel_col,
+                                      frame_col,
+                                      x_col,
+                                      y_col,
+                                      z_col,
+                                      channel_label=channel_label,
                                       )
 
         # render histogram
-        self._render_histo()
-
-
-    def _render_histo(self):
-
         # generate histogram
-        if self.dim == 2:
-            histo_size = (self.x_bins, self.y_bins)
-        elif self.dim ==3:
+        if self.datastruc.dim == 2:
+            histo_size = (x_bins, y_bins)
+        elif self.datastruc.dim ==3:
             raise ValueError("No 3D capability atm")
         #    histo_size = (x_bins, y_bins, z_bins)
+        self._render_histo(histo_size, vis_interpolation)
+
+
+    def _render_histo(self, histo_size, vis_interpolation):
+
+        
         self.datastruc.coord_2_histo(
             histo_size,
-            vis_interpolation=self.vis_interpolation
+            vis_interpolation=vis_interpolation
         )
 
         # clear images
@@ -229,8 +309,31 @@ class DatastrucWidget(QWidget):
         elif file_type == '.csv':
             raise ValueError('Not implemented yet!')
 
+        # need to get histo_size and vis interpolation from user
+
+        # 
+
+        self.x_bins_menu = QLineEdit("500")
+        self.x_bins_menu.setValidator(QIntValidator())
+        self.x_bins_menu.setToolTip("Number of bins in x dimension")
+        self.form.addRow("X bins", self.x_bins_menu)
+
+        self.y_bins_menu = QLineEdit("500")
+        self.y_bins_menu.setValidator(QIntValidator())
+        self.y_bins_menu.setToolTip("Number of bins in y dimension")
+        self.form.addRow("Y bins", self.y_bins_menu)
+
+        self.vis_interpolation_menu = QComboBox()
+        self.vis_interpolation_menu.addItems(["log2", "log10", "linear"])
+        self.vis_interpolation_menu.setToolTip(
+            "Interpolation applied to the histogram when visualising"
+            "the image of the histogram"
+        )
+        self.form.addRow("Vis interpolation", self.vis_interpolation_menu)
+
+
         # render
-        self._render_histo()
+        self._render_histo(histo_size, vis_interpolation)
 
 
     def _write_csv(self):

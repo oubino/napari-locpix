@@ -588,6 +588,7 @@ def file_to_datastruc(
 
         channels = df["channel"].unique()
         channels = sorted(channels)
+        print('channels', channels)
 
         # Get name of file - assumes last part of input file name
         if file_type == "csv":
