@@ -218,9 +218,11 @@ class DatastrucWidget(QWidget):
             self.label_widget = QWidget()
             label_layout = QGridLayout()
             
-            # zero label
-            label_layout.addWidget(QLabel("1"), 0, 0)
+            # one label
+            label_layout.addWidget(QLabel("0"), 0, 0)
             label_layout.addWidget(QLineEdit(""), 0, 1)
+            label_layout.addWidget(QLabel("1"), 1, 0)
+            label_layout.addWidget(QLineEdit(""), 1, 1)
             self.label_widget.setLayout(label_layout)
             
             # add label
@@ -239,9 +241,9 @@ class DatastrucWidget(QWidget):
         label_layout = self.label_widget.layout()
             
         # label
-        if label_layout.itemAtPosition(label-1, 0) is None:
-            label_layout.addWidget(QLabel(f"{label}"), label-1, 0)
-            label_layout.addWidget(QLineEdit(""), label-1, 1)
+        if label_layout.itemAtPosition(label, 0) is None:
+            label_layout.addWidget(QLabel(f"{label}"), label, 0)
+            label_layout.addWidget(QLineEdit(""), label, 1)
             self.label_widget.setLayout(label_layout)
 
 
@@ -314,6 +316,7 @@ class DatastrucWidget(QWidget):
             self.datastruc = None
             self.datastruc = item(None, None, None, None, None)
             self.datastruc.load_from_parquet(path)
+            print(self.datastruc.gt_label_map)
         elif file_type == 'csv':
             raise ValueError('Not implemented yet!')
 
@@ -356,9 +359,6 @@ class DatastrucWidget(QWidget):
 
     def _write_parquet(self):
 
-        # specified but need to change
-        gt_label_map = {0:'background', 1:'membrane'}
-
         # get path
         path = getsavefilename(
             self,
@@ -373,6 +373,18 @@ class DatastrucWidget(QWidget):
         try:
             self.datastruc.histo_mask = self.viewer.layers["Labels"].data.T
             self.datastruc._manual_seg_pixel_2_coord()
+
+            # if finds labels then can get label map as well
+            #label = self.viewer.layers["Labels"].selected_label
+
+            gt_label_map ={}
+            label_layout = self.label_widget.layout()
+
+            for i in range(label_layout.rowCount()):
+                label_int = int(label_layout.itemAtPosition(i, 0).widget().text())
+                label_name = label_layout.itemAtPosition(i, 1).widget().text()
+                gt_label_map[label_int] = label_name
+        
         except KeyError:
             print("No labels saved")
         
