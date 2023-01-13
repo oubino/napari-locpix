@@ -7,7 +7,7 @@ see: https://napari.org/stable/plugins/guides.html?#widgets
 """
 from typing import TYPE_CHECKING
 
-from qtpy.QtWidgets import QHBoxLayout, QVBoxLayout, QStackedLayout, QListWidget, QPushButton, QWidget, QComboBox, QFormLayout, QLabel, QLineEdit
+from qtpy.QtWidgets import QHBoxLayout, QGridLayout, QVBoxLayout, QStackedLayout, QListWidget, QPushButton, QWidget, QComboBox, QFormLayout, QLabel, QLineEdit
 from qtpy.QtGui import QIntValidator
 from qtpy.compat import getopenfilename, getsavefilename
 
@@ -198,6 +198,51 @@ class DatastrucWidget(QWidget):
         self.outer_layout.addLayout(self.stackedLayout)
         self.setLayout(self.outer_layout)
 
+        # if add labels layer
+        self.viewer.layers.events.inserted.connect(self._wrap_labels)
+        #self.viewer.layers["Labels"].selected_label.connect(self._test)
+
+    def _wrap_labels(self):
+
+        if "Labels" in self.viewer.layers:
+            labels_layer = self.viewer.layers["Labels"]
+
+            # add 
+            widget = self.stackedLayout.currentWidget()
+            layout = widget.layout()
+
+            # title
+            layout.addRow(QLabel("Label map"))
+
+            # stores all labels
+            self.label_widget = QWidget()
+            label_layout = QGridLayout()
+            
+            # zero label
+            label_layout.addWidget(QLabel("1"), 0, 0)
+            label_layout.addWidget(QLineEdit(""), 0, 1)
+            self.label_widget.setLayout(label_layout)
+            
+            # add label
+            layout.addRow(self.label_widget)
+            widget.setLayout(layout)
+
+            # button connect
+            labels_layer.events.selected_label.connect(self._add_label)
+        else:
+            pass
+
+    def _add_label(self):
+
+        label = self.viewer.layers["Labels"].selected_label
+        
+        label_layout = self.label_widget.layout()
+            
+        # label
+        if label_layout.itemAtPosition(label-1, 0) is None:
+            label_layout.addWidget(QLabel(f"{label}"), label-1, 0)
+            label_layout.addWidget(QLineEdit(""), label-1, 1)
+            self.label_widget.setLayout(label_layout)
 
 
     def _load_raw_data(self):
@@ -339,17 +384,6 @@ class DatastrucWidget(QWidget):
             gt_label_map=gt_label_map,
             overwrite=False,
         )
-
-
-
-    #def _link(self):
-    #    
-    #    #self.viewer.window.
-    #    self.viewer.window.qt_viewer.QtLabelsControls.selectionSpinBox.valueChanged.connect(self._update_labels)
-#
-    #def _update_labels(self, value):
-#
-    #    print('value', value)
         
         
     def _render_button(self, path, file_type):
