@@ -325,7 +325,7 @@ class item:
                 columns=[
                     ("x_pixel", pl.Int64),
                     ("y_pixel", pl.Int64),
-                    ("gt_label", pl.Float64),
+                    ("gt_label", pl.Int64),
                 ],
             ).sort(["x_pixel", "y_pixel"])
 
@@ -455,6 +455,7 @@ class item:
             raise ValueError(
                 "Cannot overwite. If you want to overwrite please set overwrite==True"
             )
+        print('')
         pq.write_table(arrow_table, save_loc)
 
         # To access metadata write
@@ -495,8 +496,6 @@ class item:
         bin_sizes = ast.literal_eval(bin_sizes.decode("utf-8"))
         df = pl.from_arrow(arrow_table)
 
-        # print("channel label", channel_label)
-
         self.__init__(
             name=name,
             df=df,
@@ -506,6 +505,22 @@ class item:
             gt_label_map=gt_label_map,
             bin_sizes=bin_sizes,
         )
+
+    def render_seg(self):
+        """Render the segmentation of the histogram"""
+
+        labels = self.df.select(pl.col("gt_label")).to_numpy()
+        x_pixels = self.df.select(pl.col("x_pixel")).to_numpy()
+        y_pixels = self.df.select(pl.col("y_pixel")).to_numpy()
+
+        histo_width = np.max(x_pixels) + 1
+        histo_height = np.max(y_pixels) + 1
+
+        histo = np.empty((histo_width, histo_height), dtype=np.int64)
+
+        histo[x_pixels, y_pixels] = labels
+
+        return histo
 
 def file_to_datastruc(
         input_file,

@@ -36,9 +36,19 @@ class DatastrucWidget(QWidget):
         # load data
 
         load_raw_btn = QPushButton("Load raw data")
+        # avoid multiple firing of button due to history
+        try:
+            load_raw_btn.clicked.disconnect()
+        except:
+            pass
         load_raw_btn.clicked.connect(self._load_raw_data)
 
         load_annot_btn = QPushButton("Load annotated data")
+        # avoid multiple firing of button due to history
+        try:
+            load_annot_btn.clicked.disconnect()
+        except:
+            pass
         load_annot_btn.clicked.connect(self._load_annot_data)
 
         load_box = QHBoxLayout()
@@ -48,9 +58,19 @@ class DatastrucWidget(QWidget):
         # write data
 
         write_csv_btn = QPushButton("Write to csv")
+        # avoid multiple firing of button due to history
+        try:
+            write_csv_btn.clicked.disconnect()
+        except:
+            pass
         write_csv_btn.clicked.connect(self._write_csv)
 
         write_parquet_btn = QPushButton("Write to parquet")
+        # avoid multiple firing of button due to history
+        try:
+            write_parquet_btn.clicked.disconnect()
+        except:
+            pass
         write_parquet_btn.clicked.connect(self._write_parquet)
 
         write_box = QHBoxLayout()
@@ -143,6 +163,36 @@ class DatastrucWidget(QWidget):
         load_raw_data_widget.setLayout(load_raw_data_form)
         self.stackedLayout.addWidget(load_raw_data_widget)
 
+        # load annotated data
+        load_annot_data_widget = QWidget()
+        load_annot_data_form = QFormLayout()
+
+        self.x_bins_menu_annot = QLineEdit("500")
+        self.x_bins_menu_annot.setValidator(QIntValidator())
+        self.x_bins_menu_annot.setToolTip("Number of bins in x dimension")
+        load_annot_data_form.addRow("X bins", self.x_bins_menu_annot)
+
+        self.y_bins_menu_annot = QLineEdit("500")
+        self.y_bins_menu_annot.setValidator(QIntValidator())
+        self.y_bins_menu_annot.setToolTip("Number of bins in y dimension")
+        load_annot_data_form.addRow("Y bins", self.y_bins_menu_annot)
+
+        self.vis_interpolation_menu_annot = QComboBox()
+        self.vis_interpolation_menu_annot.addItems(["log2", "log10", "linear"])
+        self.vis_interpolation_menu_annot.setToolTip(
+            "Interpolation applied to the histogram when visualising"
+            "the image of the histogram"
+        )
+        load_annot_data_form.addRow("Vis interpolation", self.vis_interpolation_menu_annot)
+
+        # render button
+        self.render_button_annot = QPushButton("Render")  
+        load_annot_data_form.addRow(self.render_button_annot)
+
+        # format layout and add to stacked layout
+        load_annot_data_widget.setLayout(load_annot_data_form)
+        self.stackedLayout.addWidget(load_annot_data_widget)
+
         # add to main
         self.outer_layout.addLayout(io)
         self.outer_layout.addLayout(self.stackedLayout)
@@ -179,26 +229,132 @@ class DatastrucWidget(QWidget):
 
         # update form
         self.stackedLayout.setCurrentIndex(0)
+        # avoid multiple firing of button due to history
+        try:
+            self.render_button.clicked.disconnect()
+        except:
+            pass
         self.render_button.clicked.connect(lambda: self._render_button(path, file_type))
         self.channel_col_menu.addItems(df.columns)
         self.frame_col_menu.addItems(df.columns)
         self.x_col_menu.addItems(df.columns)
         self.y_col_menu.addItems(df.columns)
 
+    
+    def _load_annot_data(self):
 
-    def _link(self):
+        # if user wants to change cmap let them do this in napari
+        # post rendering -i.e. keep this as is
+        self.cmap=["green", "red", "blue", "bop purple"]
+
+        # this will change if allow for 3D
+        self.dim=2
+
+        # get path
+        path = getopenfilename(
+            self,
+            "Open file",
+            "/home/some/folder",
+            "Files (*.csv *.parquet)"
+            )
+        # first part is path; second part is path filter
+        path = path[0]
+        if path.endswith(".csv"):
+            file_type = 'csv'
+        elif path.endswith(".parquet"):
+            file_type = 'parquet'
+
+        # load in
+        if file_type == 'parquet':
+            self.datastruc = None
+            self.datastruc = item(None, None, None, None, None)
+            self.datastruc.load_from_parquet(path)
+        elif file_type == 'csv':
+            raise ValueError('Not implemented yet!')
+
+        # update form
+        self.stackedLayout.setCurrentIndex(1)
+        # avoid multiple firing of button due to history
+        try:
+            self.render_button_annot.clicked.disconnect()
+        except:
+            pass
+        self.render_button_annot.clicked.connect(lambda: self._render_button_annot(path, file_type))
+
+
+    def _write_csv(self):
+
+        # get path
+        path = getsavefilename(
+            self,
+            "Save file",
+            f"/home/some/folder/{self.datastruc.name}.csv",
+            "Files (*.csv)"
+            )
+        # first part is path; second part is path filter
+        path = path[0]
+
+        # convert pixel labels to coordinate
+        try:
+            self.datastruc.histo_mask = self.viewer.layers["Labels"].data.T
+            self.datastruc._manual_seg_pixel_2_coord()
+        except KeyError:
+            print("No labels saved")
         
-        #self.viewer.window.
-        self.viewer.window.qt_viewer.QtLabelsControls.selectionSpinBox.valueChanged.connect(self._update_labels)
+        # save to this location
+        self.datastruc.save_df_to_csv(
+            path,
+            drop_zero_label=False,
+            drop_pixel_col=True, # has to be true to avoid double occurence later
+            save_chan_label=True,
+        )
 
-    def _update_labels(self, value):
+    def _write_parquet(self):
 
-        print('value', value)
+        # specified but need to change
+        gt_label_map = {0:'background', 1:'membrane'}
+
+        # get path
+        path = getsavefilename(
+            self,
+            "Save file",
+            f"/home/some/folder/{self.datastruc.name}.parquet",
+            "Files (*.parquet)"
+            )
+        # first part is path; second part is path filter
+        path = path[0]
+
+        # convert pixel labels to coordinate
+        try:
+            self.datastruc.histo_mask = self.viewer.layers["Labels"].data.T
+            self.datastruc._manual_seg_pixel_2_coord()
+        except KeyError:
+            print("No labels saved")
+        
+        # save to this location
+        self.datastruc.save_to_parquet(
+            path,
+            drop_zero_label=False,
+            drop_pixel_col=True, # has to be true to avoid double occurence later
+            gt_label_map=gt_label_map,
+            overwrite=False,
+        )
+
+
+
+    #def _link(self):
+    #    
+    #    #self.viewer.window.
+    #    self.viewer.window.qt_viewer.QtLabelsControls.selectionSpinBox.valueChanged.connect(self._update_labels)
+#
+    #def _update_labels(self, value):
+#
+    #    print('value', value)
         
         
     def _render_button(self, path, file_type):
 
-        print('here 2')
+        print('here 1')
         
         # will change
         z_col = None
@@ -221,6 +377,7 @@ class DatastrucWidget(QWidget):
             self.channel_three_label.text(),
         ]
 
+        self.datastruc = None
         self.datastruc = file_to_datastruc(path,
                                       file_type,
                                       dim,
@@ -241,9 +398,35 @@ class DatastrucWidget(QWidget):
         #    histo_size = (x_bins, y_bins, z_bins)
         self._render_histo(histo_size, vis_interpolation)
 
+    def _render_button_annot(self, path, file_type):
 
-    def _render_histo(self, histo_size, vis_interpolation):
+        print('here 2')
+        
+        # will change
+        z_col = None
+        dim = 2
 
+        # parse the options
+        x_bins = int(self.x_bins_menu_annot.text())
+        y_bins = int(self.x_bins_menu_annot.text())
+        #self.z_bins =
+        vis_interpolation =  self.vis_interpolation_menu_annot.currentText()
+       
+        # render histogram
+        # generate histogram
+        if self.datastruc.dim == 2:
+            histo_size = (x_bins, y_bins)
+        elif self.datastruc.dim ==3:
+            raise ValueError("No 3D capability atm")
+        #    histo_size = (x_bins, y_bins, z_bins)
+        self._render_histo(histo_size, vis_interpolation, labels=True)
+
+
+    def _render_histo(self, histo_size, vis_interpolation, labels=False):
+
+        # print
+        if self.datastruc is not None:
+            print('here 0', self.datastruc.df)
         
         self.datastruc.coord_2_histo(
             histo_size,
@@ -283,113 +466,16 @@ class DatastrucWidget(QWidget):
                         gamma=2,
                         contrast_limits=[0, 30],
                     )
+                
+                # add labels if present
+                if labels:
+                    # note this has to be called after coord_2_histo to be in the
+                    # correct shape
+                    histo_mask = self.datastruc.render_seg()
+                    self.viewer.add_labels(
+                        histo_mask.T,
+                        name="Labels"
+                    )
 
         elif self.dim == 3:
             print("segment 3D image")
-
-    def _load_annot_data(self):
-
-        # get path
-        path = getopenfilename(
-            self,
-            "Open file",
-            "/home/some/folder",
-            "Files (*.csv *.parquet)"
-            )
-        # first part is path; second part is path filter
-        path = path[0]
-        if path.endswith(".csv"):
-            file_type = 'csv'
-        elif path.endswith(".parquet"):
-            file_type = 'parquet'
-
-        # load in
-        if file_type == '.parquet':
-            self.datastruc = item.load_from_parquet(path)
-        elif file_type == '.csv':
-            raise ValueError('Not implemented yet!')
-
-        # need to get histo_size and vis interpolation from user
-
-        # 
-
-        self.x_bins_menu = QLineEdit("500")
-        self.x_bins_menu.setValidator(QIntValidator())
-        self.x_bins_menu.setToolTip("Number of bins in x dimension")
-        self.form.addRow("X bins", self.x_bins_menu)
-
-        self.y_bins_menu = QLineEdit("500")
-        self.y_bins_menu.setValidator(QIntValidator())
-        self.y_bins_menu.setToolTip("Number of bins in y dimension")
-        self.form.addRow("Y bins", self.y_bins_menu)
-
-        self.vis_interpolation_menu = QComboBox()
-        self.vis_interpolation_menu.addItems(["log2", "log10", "linear"])
-        self.vis_interpolation_menu.setToolTip(
-            "Interpolation applied to the histogram when visualising"
-            "the image of the histogram"
-        )
-        self.form.addRow("Vis interpolation", self.vis_interpolation_menu)
-
-
-        # render
-        self._render_histo(histo_size, vis_interpolation)
-
-
-    def _write_csv(self):
-
-        # get path
-        path = getsavefilename(
-            self,
-            "Save file",
-            f"/home/some/folder/{self.datastruc.name}.csv",
-            "Files (*.csv)"
-            )
-        # first part is path; second part is path filter
-        path = path[0]
-
-        # convert pixel labels to coordinate
-        try:
-            self.datastruc.histo_mask = self.viewer.layers["Labels"].data.T
-            self.datastruc._manual_seg_pixel_2_coord()
-        except KeyError:
-            print("No labels saved")
-        
-        # save to this location
-        self.datastruc.save_df_to_csv(
-            path,
-            drop_zero_label=False,
-            drop_pixel_col=False,
-            save_chan_label=True,
-        )
-
-    def _write_parquet(self):
-
-        # specified but need to change
-        gt_label_map = {0:'background', 1:'membrane'}
-
-        # get path
-        path = getsavefilename(
-            self,
-            "Save file",
-            f"/home/some/folder/{self.datastruc.name}.parquet",
-            "Files (*.parquet)"
-            )
-        # first part is path; second part is path filter
-        path = path[0]
-
-        # convert pixel labels to coordinate
-        try:
-            self.datastruc.histo_mask = self.viewer.layers["Labels"].data.T
-            self.datastruc._manual_seg_pixel_2_coord()
-        except KeyError:
-            print("No labels saved")
-        
-        # save to this location
-        self.datastruc.save_to_parquet(
-            path,
-            drop_zero_label=False,
-            drop_pixel_col=False,
-            gt_label_map=gt_label_map,
-            overwrite=False,
-        )
