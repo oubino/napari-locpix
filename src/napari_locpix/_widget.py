@@ -125,15 +125,15 @@ class DatastrucWidget(QWidget):
 
         self.channel_one_label = QLineEdit("unk")
         self.channel_one_label.setToolTip("Protein present in channel one")
-        load_raw_data_form.addRow("Chan 0 label: ", self.channel_one_label)
+        load_raw_data_form.addRow("Chan 1 label: ", self.channel_one_label)
 
         self.channel_two_label = QLineEdit("unk")
         self.channel_two_label.setToolTip("Protein present in channel two")
-        load_raw_data_form.addRow("Chan 0 label: ", self.channel_two_label)
+        load_raw_data_form.addRow("Chan 2 label: ", self.channel_two_label)
 
         self.channel_three_label = QLineEdit("unk")
         self.channel_three_label.setToolTip("Protein present in channel three")
-        load_raw_data_form.addRow("Chan 0 label: ", self.channel_three_label)
+        load_raw_data_form.addRow("Chan 3 label: ", self.channel_three_label)
 
         load_raw_data_form.addRow(QLabel("Histogram settings"))
 
