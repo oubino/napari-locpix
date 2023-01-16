@@ -559,6 +559,7 @@ class DatastrucWidget(QWidget):
                 # correct shape
                 histo_mask = self.datastruc.render_seg()
                 print(histo_mask)
+                print(histo_mask.shape)
                 self.viewer.add_labels(histo_mask.T, name="Labels")
 
         elif self.dim == 3:
