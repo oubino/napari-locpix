@@ -88,11 +88,11 @@ class item:
 
         # channel labels and channel choice need to be same in length
         if (channels is not None) or (channel_label is not None):
-            if len(channels) != len(channel_label):
+            if len(channels) > len(channel_label):
                 raise ValueError(
                     f"Labels for each channel is length {len(channel_label)}\n"
                     f"Channels is length {len(channels)}\n"
-                    f"These must be the same length!"
+                    f"There are more channels than labels"
                 )
 
     def chan_2_label(self, chan):
@@ -198,7 +198,9 @@ class item:
                 sample = np.swapaxes(sample, 0, 1)
                 # (D, N) where D is
                 # self.dim and N is number of localisations
-                self.histo[chan], _ = np.histogramdd(sample, bins=self.histo_edges)
+                self.histo[chan], _ = np.histogramdd(
+                    sample, bins=self.histo_edges
+                )
 
         if self.dim == 3:
             # 3D histogram for every channel, assigned to self.histo (dict)
@@ -208,8 +210,9 @@ class item:
                 sample = np.swapaxes(sample, 0, 1)
                 # (D, N) where D is self.dim and N is number of
                 # localisations
-                self.histo[chan], _ = np.histogramdd(sample, bins=self.histo_edges)
-
+                self.histo[chan], _ = np.histogramdd(
+                    sample, bins=self.histo_edges
+                )
 
         # plt.close()
 
@@ -257,8 +260,12 @@ class item:
         self.df = self.df.select(
             [
                 pl.all(),
-                pl.col("x").map(lambda q: (q - x_min) / x_pixel_width).alias("x_pixel"),
-                pl.col("y").map(lambda q: (q - y_min) / y_pixel_width).alias("y_pixel"),
+                pl.col("x")
+                .map(lambda q: (q - x_min) / x_pixel_width)
+                .alias("x_pixel"),
+                pl.col("y")
+                .map(lambda q: (q - y_min) / y_pixel_width)
+                .alias("y_pixel"),
             ]
         )
         # floor the pixel locations
@@ -292,7 +299,9 @@ class item:
                 ]
             )
             # floor the pixel locations
-            self.df = self.df.with_column(pl.col("z_pixel").cast(int, strict=True))
+            self.df = self.df.with_column(
+                pl.col("z_pixel").cast(int, strict=True)
+            )
             # localisations at the end get assigned to outside the histogram,
             # therefore need to be assigned
             # to previous pixel
@@ -314,7 +323,8 @@ class item:
             # create dataframe
             flatten_mask = np.ravel(self.histo_mask)
             mesh_grid = np.meshgrid(
-                range(self.histo_mask.shape[0]), range(self.histo_mask.shape[1])
+                range(self.histo_mask.shape[0]),
+                range(self.histo_mask.shape[1]),
             )
             x_pixel = np.ravel(mesh_grid[1])
             y_pixel = np.ravel(mesh_grid[0])
@@ -325,12 +335,18 @@ class item:
                 columns=[
                     ("x_pixel", pl.Int64),
                     ("y_pixel", pl.Int64),
-                    ("gt_label", pl.Float64),
+                    ("gt_label", pl.Int64),
                 ],
             ).sort(["x_pixel", "y_pixel"])
 
+            # drop gt_label if already present
+            if "gt_label" in self.df.columns:
+                self.df = self.df.drop("gt_label")
+
             # join mask dataframe
-            self.df = self.df.join(mask_df, how="inner", on=["x_pixel", "y_pixel"])
+            self.df = self.df.join(
+                mask_df, how="inner", on=["x_pixel", "y_pixel"]
+            )
 
             # sanity check
             # print(len(self.df))
@@ -340,53 +356,57 @@ class item:
         elif self.dim == 3:
             print("segment the 3d coords")
 
-
     def save_df_to_csv(
-       self, csv_loc, drop_zero_label=False, drop_pixel_col=True, save_chan_label=True):
-       """Save the dataframe to a .csv with option to:
-               drop positions which are background
-               drop the column containing pixel information
-               save additional column with labels for each
-                   localisation
-       Args:
-           csv_loc (String): Save the csv to this location
-           drop_zero_label (bool): If True then only non zero
-               label positions are saved to csv
-           drop_pixel_col (bool): If True then don't save
-               the column with x,y,z pixel
-           save_chan_label (bool) : If True then save an
-               additional column for each localisation
-               containing the label for each channel
-       Returns:
-           None"""
-       save_df = self.df
-       if drop_pixel_col:
-           # don't want to save x,y pixel to csv
-           save_df = save_df.drop("x_pixel")
-           save_df = save_df.drop("y_pixel")
-           if self.dim == 3:
-               save_df = save_df.drop("z_pixel")
-       # rearrange so x,y,z, ...,labels,channels
-       # if self.dim == 2:
-       #    cols = ['x', 'y', 'gt_label', 'channel']
-       # elif self.dim == 3:
-       #    cols = ['x', 'y', 'z', 'gt_label', 'channel']
-       # save_df_cols = save_df.columns
-       # cols = [col for col in cols if col in save_df_cols] +
-       # [col for col in save_df_cols if col #]not in cols]
-       # save_df = save_df[cols]
-       # drop rows with zero label
-       if drop_zero_label:
-           save_df = save_df.filter(pl.col("gt_label") != 0)
-       # save channel label as well
-       if save_chan_label:
-           label_df = pl.DataFrame({"chan_label": self.channel_label}).with_row_count(
-               "channel"
-           )
-           label_df = label_df.with_column(pl.col("channel").cast(pl.Int64))
-           save_df = save_df.join(label_df, on="channel", how="inner")
-       # save to location
-       save_df.write_csv(csv_loc, sep=",")
+        self,
+        csv_loc,
+        drop_zero_label=False,
+        drop_pixel_col=True,
+        save_chan_label=True,
+    ):
+        """Save the dataframe to a .csv with option to:
+                drop positions which are background
+                drop the column containing pixel information
+                save additional column with labels for each
+                    localisation
+        Args:
+            csv_loc (String): Save the csv to this location
+            drop_zero_label (bool): If True then only non zero
+                label positions are saved to csv
+            drop_pixel_col (bool): If True then don't save
+                the column with x,y,z pixel
+            save_chan_label (bool) : If True then save an
+                additional column for each localisation
+                containing the label for each channel
+        Returns:
+            None"""
+        save_df = self.df
+        if drop_pixel_col:
+            # don't want to save x,y pixel to csv
+            save_df = save_df.drop("x_pixel")
+            save_df = save_df.drop("y_pixel")
+            if self.dim == 3:
+                save_df = save_df.drop("z_pixel")
+        # rearrange so x,y,z, ...,labels,channels
+        # if self.dim == 2:
+        #    cols = ['x', 'y', 'gt_label', 'channel']
+        # elif self.dim == 3:
+        #    cols = ['x', 'y', 'z', 'gt_label', 'channel']
+        # save_df_cols = save_df.columns
+        # cols = [col for col in cols if col in save_df_cols] +
+        # [col for col in save_df_cols if col #]not in cols]
+        # save_df = save_df[cols]
+        # drop rows with zero label
+        if drop_zero_label:
+            save_df = save_df.filter(pl.col("gt_label") != 0)
+        # save channel label as well
+        if save_chan_label:
+            label_df = pl.DataFrame(
+                {"chan_label": self.channel_label}
+            ).with_row_count("channel")
+            label_df = label_df.with_column(pl.col("channel").cast(pl.Int64))
+            save_df = save_df.join(label_df, on="channel", how="inner")
+        # save to location
+        save_df.write_csv(csv_loc, sep=",")
 
     def save_to_parquet(
         self,
@@ -483,7 +503,9 @@ class item:
         )
         if gt_label_map is not None:
             # convert string keys to int keys for the mapping
-            gt_label_map = {int(key): value for key, value in gt_label_map.items()}
+            gt_label_map = {
+                int(key): value for key, value in gt_label_map.items()
+            }
         # convert string keys to int keys for the mapping
         dim = arrow_table.schema.metadata[b"dim"]
         dim = int(dim)
@@ -495,8 +517,6 @@ class item:
         bin_sizes = ast.literal_eval(bin_sizes.decode("utf-8"))
         df = pl.from_arrow(arrow_table)
 
-        # print("channel label", channel_label)
-
         self.__init__(
             name=name,
             df=df,
@@ -507,99 +527,120 @@ class item:
             bin_sizes=bin_sizes,
         )
 
+    def render_seg(self):
+        """Render the segmentation of the histogram"""
+
+        labels = self.df.select(pl.col("gt_label")).to_numpy()
+        x_pixels = self.df.select(pl.col("x_pixel")).to_numpy()
+        y_pixels = self.df.select(pl.col("y_pixel")).to_numpy()
+
+        histo_width = np.max(x_pixels) + 1
+        histo_height = np.max(y_pixels) + 1
+
+        histo = np.zeros((histo_width, histo_height), dtype=np.int64)
+
+        histo[x_pixels, y_pixels] = labels
+
+        return histo
+
+
 def file_to_datastruc(
-        input_file,
-        file_type,
-        dim,
-        channel_col,
-        frame_col,
-        x_col,
-        y_col,
-        z_col,
-        channel_choice=None,
-        channel_label=None,
-    ):
-        """Loads in .csv or .parquet and converts to the required datastructure.
+    input_file,
+    file_type,
+    dim,
+    channel_col,
+    frame_col,
+    x_col,
+    y_col,
+    z_col,
+    channel_label=None,
+):
+    """Loads in .csv or .parquet and converts to the required datastructure.
 
-        Currently considers the following columns: channel frame x y z
-        Also user can specify the channels they want to consider, these
-        should be present in the channels column
+    Currently considers the following columns: channel frame x y z
+    Also user can specify the channels they want to consider, these
+    should be present in the channels column
 
-        Args:
-            input_file (string) : Location of the file
-            file_type (string) : Either csv or parquet
-            save_loc (string) : Location to save datastructure to
-            dim (int) : Dimensions to consider either 2 or 3
-            channel_col (string) : Name of column which gives channel
-                for localisation
-            frame_col (string) : Name of column which gives frame for localisation
-            x_col (string) : Name of column which gives x for localisation
-            y_col (string) : Name of column which gives y for localisation
-            z_col (string) : Name of column which gives z for localisation
-            channel_choice (list of ints) : If specified then this will be list
-                of integers representing channels to be considered
-            channel_label (list of strings) : If specified then this is the
-                label for each channel i.e. ['egfr', 'ereg','unk'] means
-                channel 0 is egfr protein, channel 1 is ereg proteins and
-                channel 2 is unknown
+    Args:
+        input_file (string) : Location of the file
+        file_type (string) : Either csv or parquet
+        save_loc (string) : Location to save datastructure to
+        dim (int) : Dimensions to consider either 2 or 3
+        channel_col (string) : Name of column which gives channel
+            for localisation
+        frame_col (string) : Name of column which gives frame for localisation
+        x_col (string) : Name of column which gives x for localisation
+        y_col (string) : Name of column which gives y for localisation
+        z_col (string) : Name of column which gives z for localisation
+        channel_label (list of strings) : If specified then this is the
+            label for each channel i.e. ['egfr', 'ereg','unk'] means
+            channel 0 is egfr protein, channel 1 is ereg proteins and
+            channel 2 is unknown
 
-        Returns:
-            datastruc (SMLM_datastruc) : Datastructure containg the data
-        """
+    Returns:
+        datastruc (SMLM_datastruc) : Datastructure containg the data
+    """
 
-        # Check dimensions correctly specified
-        if dim != 2 and dim != 3:
-            raise ValueError("Dimensions must be 2 or 3")
-        if dim == 2 and z_col:
-            raise ValueError("If dimensions are two no z should be specified")
-        if dim == 3 and not z_col:
-            raise ValueError("If dimensions are 3 then z_col must be specified")
+    # Check dimensions correctly specified
+    if dim != 2 and dim != 3:
+        raise ValueError("Dimensions must be 2 or 3")
+    if dim == 2 and z_col:
+        raise ValueError("If dimensions are two no z should be specified")
+    if dim == 3 and not z_col:
+        raise ValueError("If dimensions are 3 then z_col must be specified")
 
-        # check file type parquet or csv
-        if file_type != "csv" and file_type != "parquet":
-            raise ValueError(f"{file_type} is not supported, should be csv or parquet")
+    # check file type parquet or csv
+    if file_type != "csv" and file_type != "parquet":
+        raise ValueError(
+            f"{file_type} is not supported, should be csv or parquet"
+        )
 
-        # Load in data
-        if dim == 2:
-            if file_type == "csv":
-                df = pl.read_csv(input_file, columns=[channel_col, frame_col, x_col, y_col])
-            elif file_type == "parquet":
-                df = pl.read_parquet(
-                    input_file, columns=[channel_col, frame_col, x_col, y_col]
-                )
-            df = df.rename(
-                {channel_col: "channel", frame_col: "frame", x_col: "x", y_col: "y"}
-            )
-        elif dim == 3:
-            if file_type == "csv":
-                df = pl.read_csv(
-                    input_file, columns=[channel_col, frame_col, x_col, y_col, z_col]
-                )
-            elif file_type == "parquet":
-                df = pl.read_parquet(
-                    input_file, columns=[channel_col, frame_col, x_col, y_col]
-                )
-            df = df.rename(
-                {
-                    channel_col: "channel",
-                    frame_col: "frame",
-                    x_col: "x",
-                    y_col: "y",
-                    z_col: "z",
-                }
-            )
-
-        # Specify channels to consider
-        # if channel_choice is None:
-        #    channels = df["channel"].unique()
-        #    channels = sorted(channels)
-        # else:
-        channels = channel_choice
-
-        # Get name of file - assumes last part of input file name
+    # Load in data
+    if dim == 2:
         if file_type == "csv":
-            name = os.path.basename(os.path.normpath(input_file))[:-4]
+            df = pl.read_csv(
+                input_file, columns=[channel_col, frame_col, x_col, y_col]
+            )
         elif file_type == "parquet":
-            name = os.path.basename(os.path.normpath(input_file))[:-8]
+            df = pl.read_parquet(
+                input_file, columns=[channel_col, frame_col, x_col, y_col]
+            )
+        df = df.rename(
+            {
+                channel_col: "channel",
+                frame_col: "frame",
+                x_col: "x",
+                y_col: "y",
+            }
+        )
+    elif dim == 3:
+        if file_type == "csv":
+            df = pl.read_csv(
+                input_file,
+                columns=[channel_col, frame_col, x_col, y_col, z_col],
+            )
+        elif file_type == "parquet":
+            df = pl.read_parquet(
+                input_file, columns=[channel_col, frame_col, x_col, y_col]
+            )
+        df = df.rename(
+            {
+                channel_col: "channel",
+                frame_col: "frame",
+                x_col: "x",
+                y_col: "y",
+                z_col: "z",
+            }
+        )
 
-        return item(name, df, dim, channels, channel_label)
+    channels = df["channel"].unique()
+    channels = sorted(channels)
+    print("channels", channels)
+
+    # Get name of file - assumes last part of input file name
+    if file_type == "csv":
+        name = os.path.basename(os.path.normpath(input_file))[:-4]
+    elif file_type == "parquet":
+        name = os.path.basename(os.path.normpath(input_file))[:-8]
+
+    return item(name, df, dim, channels, channel_label)
