@@ -7,7 +7,19 @@ see: https://napari.org/stable/plugins/guides.html?#widgets
 """
 from typing import TYPE_CHECKING
 
-from qtpy.QtWidgets import QHBoxLayout, QGridLayout, QVBoxLayout, QStackedLayout, QListWidget, QPushButton, QWidget, QComboBox, QFormLayout, QLabel, QLineEdit
+from qtpy.QtWidgets import (
+    QHBoxLayout,
+    QGridLayout,
+    QVBoxLayout,
+    QStackedLayout,
+    QPushButton,
+    QWidget,
+    QComboBox,
+    QFormLayout,
+    QLabel,
+    QLineEdit,
+)
+from qtpy import QtCore
 from qtpy.QtGui import QIntValidator
 from qtpy.compat import getopenfilename, getsavefilename
 
@@ -41,7 +53,7 @@ class DatastrucWidget(QWidget):
             load_raw_btn.clicked.disconnect()
         except:
             pass
-        load_raw_btn.clicked.connect(self._load_raw_data)
+        load_raw_btn.clicked.connect(self._load_raw_data_fd)
 
         load_annot_btn = QPushButton("Load annotated data")
         # avoid multiple firing of button due to history
@@ -49,7 +61,7 @@ class DatastrucWidget(QWidget):
             load_annot_btn.clicked.disconnect()
         except:
             pass
-        load_annot_btn.clicked.connect(self._load_annot_data)
+        load_annot_btn.clicked.connect(self._load_annot_data_fd)
 
         load_box = QHBoxLayout()
         load_box.addWidget(load_raw_btn)
@@ -63,7 +75,7 @@ class DatastrucWidget(QWidget):
             write_csv_btn.clicked.disconnect()
         except:
             pass
-        write_csv_btn.clicked.connect(self._write_csv)
+        write_csv_btn.clicked.connect(self._write_csv_fd)
 
         write_parquet_btn = QPushButton("Write to parquet")
         # avoid multiple firing of button due to history
@@ -71,7 +83,7 @@ class DatastrucWidget(QWidget):
             write_parquet_btn.clicked.disconnect()
         except:
             pass
-        write_parquet_btn.clicked.connect(self._write_parquet)
+        write_parquet_btn.clicked.connect(self._write_parquet_fd)
 
         write_box = QHBoxLayout()
         write_box.addWidget(write_csv_btn)
@@ -81,15 +93,14 @@ class DatastrucWidget(QWidget):
         io.addLayout(load_box)
         io.addLayout(write_box)
 
-
-        #self.setLayout(self.form)
-        #self.layout().addWidget(load_raw_btn)
-        #self.layout().addWidget(load_annot_btn)
-        #self.layout().addWidget(write_csv_btn)
-        #self.layout().addWidget(write_parquet_btn)
+        # self.setLayout(self.form)
+        # self.layout().addWidget(load_raw_btn)
+        # self.layout().addWidget(load_annot_btn)
+        # self.layout().addWidget(write_csv_btn)
+        # self.layout().addWidget(write_parquet_btn)
 
         # link label button
-        #self._link()
+        # self._link()
 
         # stacked layout for the options
         self.stackedLayout = QStackedLayout()
@@ -113,9 +124,9 @@ class DatastrucWidget(QWidget):
         self.y_col_menu = QComboBox()
         load_raw_data_form.addRow("y: ", self.y_col_menu)
 
-        #z_col_menu = QComboBox()
-        #z_col_menu.addItems(df.columns)
-        #load_raw_data_form.addRow("Channel col", self.z_col_menu)
+        # z_col_menu = QComboBox()
+        # z_col_menu.addItems(df.columns)
+        # load_raw_data_form.addRow("Channel col", self.z_col_menu)
 
         load_raw_data_form.addRow(QLabel("Channel labels"))
 
@@ -153,10 +164,12 @@ class DatastrucWidget(QWidget):
             "Interpolation applied to the histogram when visualising"
             "the image of the histogram"
         )
-        load_raw_data_form.addRow("Vis interpolation", self.vis_interpolation_menu)
+        load_raw_data_form.addRow(
+            "Vis interpolation", self.vis_interpolation_menu
+        )
 
         # render button
-        self.render_button = QPushButton("Render")  
+        self.render_button = QPushButton("Render")
         load_raw_data_form.addRow(self.render_button)
 
         # format layout and add to stacked layout
@@ -183,10 +196,12 @@ class DatastrucWidget(QWidget):
             "Interpolation applied to the histogram when visualising"
             "the image of the histogram"
         )
-        load_annot_data_form.addRow("Vis interpolation", self.vis_interpolation_menu_annot)
+        load_annot_data_form.addRow(
+            "Vis interpolation", self.vis_interpolation_menu_annot
+        )
 
         # render button
-        self.render_button_annot = QPushButton("Render")  
+        self.render_button_annot = QPushButton("Render")
         load_annot_data_form.addRow(self.render_button_annot)
 
         # format layout and add to stacked layout
@@ -200,14 +215,14 @@ class DatastrucWidget(QWidget):
 
         # if add labels layer
         self.viewer.layers.events.inserted.connect(self._wrap_labels)
-        #self.viewer.layers["Labels"].selected_label.connect(self._test)
+        # self.viewer.layers["Labels"].selected_label.connect(self._test)
 
     def _wrap_labels(self):
 
         if "Labels" in self.viewer.layers:
             labels_layer = self.viewer.layers["Labels"]
 
-            # add 
+            # add
             widget = self.stackedLayout.currentWidget()
             layout = widget.layout()
 
@@ -217,14 +232,14 @@ class DatastrucWidget(QWidget):
             # stores all labels
             self.label_widget = QWidget()
             label_layout = QGridLayout()
-            
+
             # one label
             label_layout.addWidget(QLabel("0"), 0, 0)
             label_layout.addWidget(QLineEdit(""), 0, 1)
             label_layout.addWidget(QLabel("1"), 1, 0)
             label_layout.addWidget(QLineEdit(""), 1, 1)
             self.label_widget.setLayout(label_layout)
-            
+
             # add label
             layout.addRow(self.label_widget)
             widget.setLayout(layout)
@@ -237,41 +252,44 @@ class DatastrucWidget(QWidget):
     def _add_label(self):
 
         label = self.viewer.layers["Labels"].selected_label
-        
+
         label_layout = self.label_widget.layout()
-            
+
         # label
         if label_layout.itemAtPosition(label, 0) is None:
             label_layout.addWidget(QLabel(f"{label}"), label, 0)
             label_layout.addWidget(QLineEdit(""), label, 1)
             self.label_widget.setLayout(label_layout)
 
-
-    def _load_raw_data(self):
-
-        # if user wants to change cmap let them do this in napari
-        # post rendering -i.e. keep this as is
-        self.cmap=["green", "red", "blue", "bop purple"]
-
-        # this will change if allow for 3D
-        self.dim=2
-        self.z_col=None
-        self.z_bins=None
+    def _load_raw_data_fd(self):
 
         # load data into datastruc
         path = getopenfilename(
-            self,
-            "Open file",
-            "/home/some/folder",
-            "Files (*.csv *.parquet)"
-            )
+            self, "Open file", "/home/some/folder", "Files (*.csv *.parquet)"
+        )
+
         # first part is path; second part is path filter
         path = path[0]
+
+        self._load_raw_data(path)
+
+
+    def _load_raw_data(self, path):
+
+        # if user wants to change cmap let them do this in napari
+        # post rendering -i.e. keep this as is
+        self.cmap = ["green", "red", "blue", "bop purple"]
+
+        # this will change if allow for 3D
+        self.dim = 2
+        self.z_col = None
+        self.z_bins = None
+
         if path.endswith(".csv"):
-            file_type = 'csv'
+            file_type = "csv"
             df = pl.scan_csv(path)
         elif path.endswith(".parquet"):
-            file_type = 'parquet'
+            file_type = "parquet"
             df = pl.scan_parquet(path)
 
         # update form
@@ -281,44 +299,63 @@ class DatastrucWidget(QWidget):
             self.render_button.clicked.disconnect()
         except:
             pass
-        self.render_button.clicked.connect(lambda: self._render_button(path, file_type))
+        self.render_button.clicked.connect(
+            lambda: self._render_button(path, file_type)
+        )
         self.channel_col_menu.addItems(df.columns)
         self.frame_col_menu.addItems(df.columns)
         self.x_col_menu.addItems(df.columns)
         self.y_col_menu.addItems(df.columns)
 
-    
-    def _load_annot_data(self):
+        # try and find matching
+        channel_index = self.channel_col_menu.findText("chan", flags=QtCore.Qt.MatchStartsWith)
+        print('channel index', channel_index)
+        if channel_index != -1:
+            self.channel_col_menu.setCurrentIndex(channel_index)
+        frame_index = self.frame_col_menu.findText("fram", flags=QtCore.Qt.MatchStartsWith)
+        if frame_index != -1:
+            self.frame_col_menu.setCurrentIndex(frame_index)
+        x_index = self.x_col_menu.findText("x", flags=QtCore.Qt.MatchStartsWith)
+        if x_index != -1:
+            self.x_col_menu.setCurrentIndex(x_index)
+        y_index = self.y_col_menu.findText("y", flags=QtCore.Qt.MatchStartsWith)
+        if y_index != -1:
+            self.y_col_menu.setCurrentIndex(y_index)
+
+    def _load_annot_data_fd(self):
+        
+        # get path
+        path = getopenfilename(
+            self, "Open file", "/home/some/folder", "Files (*.csv *.parquet)"
+        )
+        # first part is path; second part is path filter
+        path = path[0]
+
+        self._load_annot_data(path)
+
+
+    def _load_annot_data(self, path):
 
         # if user wants to change cmap let them do this in napari
         # post rendering -i.e. keep this as is
-        self.cmap=["green", "red", "blue", "bop purple"]
+        self.cmap = ["green", "red", "blue", "bop purple"]
 
         # this will change if allow for 3D
-        self.dim=2
+        self.dim = 2
 
-        # get path
-        path = getopenfilename(
-            self,
-            "Open file",
-            "/home/some/folder",
-            "Files (*.csv *.parquet)"
-            )
-        # first part is path; second part is path filter
-        path = path[0]
         if path.endswith(".csv"):
-            file_type = 'csv'
+            file_type = "csv"
         elif path.endswith(".parquet"):
-            file_type = 'parquet'
+            file_type = "parquet"
 
         # load in
-        if file_type == 'parquet':
+        if file_type == "parquet":
             self.datastruc = None
             self.datastruc = item(None, None, None, None, None)
             self.datastruc.load_from_parquet(path)
             print(self.datastruc.gt_label_map)
-        elif file_type == 'csv':
-            raise ValueError('Not implemented yet!')
+        elif file_type == "csv":
+            raise ValueError("Not implemented yet!")
 
         # update form
         self.stackedLayout.setCurrentIndex(1)
@@ -327,20 +364,27 @@ class DatastrucWidget(QWidget):
             self.render_button_annot.clicked.disconnect()
         except:
             pass
-        self.render_button_annot.clicked.connect(lambda: self._render_button_annot(path, file_type))
+        self.render_button_annot.clicked.connect(
+            lambda: self._render_button_annot(path, file_type)
+        )
+    
 
-
-    def _write_csv(self):
+    def _write_csv_fd(self):
 
         # get path
         path = getsavefilename(
             self,
             "Save file",
             f"/home/some/folder/{self.datastruc.name}.csv",
-            "Files (*.csv)"
-            )
+            "Files (*.csv)",
+        )
         # first part is path; second part is path filter
         path = path[0]
+
+        self._write_csv(path)
+
+
+    def _write_csv(self, path):
 
         # convert pixel labels to coordinate
         try:
@@ -348,26 +392,30 @@ class DatastrucWidget(QWidget):
             self.datastruc._manual_seg_pixel_2_coord()
         except KeyError:
             print("No labels saved")
-        
+
         # save to this location
         self.datastruc.save_df_to_csv(
             path,
             drop_zero_label=False,
-            drop_pixel_col=True, # has to be true to avoid double occurence later
+            drop_pixel_col=True,  # has to be true to avoid double occurence later
             save_chan_label=True,
         )
 
-    def _write_parquet(self):
+    def _write_parquet_fd(self):
 
         # get path
         path = getsavefilename(
             self,
             "Save file",
             f"/home/some/folder/{self.datastruc.name}.parquet",
-            "Files (*.parquet)"
-            )
+            "Files (*.parquet)",
+        )
         # first part is path; second part is path filter
         path = path[0]
+
+        self._write_parquet(path)
+
+    def _write_parquet(self, path):
 
         # convert pixel labels to coordinate
         try:
@@ -375,33 +423,32 @@ class DatastrucWidget(QWidget):
             self.datastruc._manual_seg_pixel_2_coord()
 
             # if finds labels then can get label map as well
-            #label = self.viewer.layers["Labels"].selected_label
+            # label = self.viewer.layers["Labels"].selected_label
 
-            gt_label_map ={}
+            gt_label_map = {}
             label_layout = self.label_widget.layout()
 
             for i in range(label_layout.rowCount()):
-                label_int = int(label_layout.itemAtPosition(i, 0).widget().text())
+                label_int = int(
+                    label_layout.itemAtPosition(i, 0).widget().text()
+                )
                 label_name = label_layout.itemAtPosition(i, 1).widget().text()
                 gt_label_map[label_int] = label_name
-        
+
         except KeyError:
             print("No labels saved")
-        
+
         # save to this location
         self.datastruc.save_to_parquet(
             path,
             drop_zero_label=False,
-            drop_pixel_col=True, # has to be true to avoid double occurence later
+            drop_pixel_col=True,  # has to be true to avoid double occurence later
             gt_label_map=gt_label_map,
             overwrite=False,
         )
-        
-        
+
     def _render_button(self, path, file_type):
 
-        print('here 1')
-        
         # will change
         z_col = None
         dim = 2
@@ -411,11 +458,11 @@ class DatastrucWidget(QWidget):
         frame_col = self.frame_col_menu.currentText()
         x_col = self.x_col_menu.currentText()
         y_col = self.y_col_menu.currentText()
-        #self.z_col = self.z_col_menu.currentText()
+        # self.z_col = self.z_col_menu.currentText()
         x_bins = int(self.x_bins_menu.text())
         y_bins = int(self.x_bins_menu.text())
-        #self.z_bins =
-        vis_interpolation =  self.vis_interpolation_menu.currentText()
+        # self.z_bins =
+        vis_interpolation = self.vis_interpolation_menu.currentText()
         channel_label = [
             self.channel_zero_label.text(),
             self.channel_one_label.text(),
@@ -424,59 +471,52 @@ class DatastrucWidget(QWidget):
         ]
 
         self.datastruc = None
-        self.datastruc = file_to_datastruc(path,
-                                      file_type,
-                                      dim,
-                                      channel_col,
-                                      frame_col,
-                                      x_col,
-                                      y_col,
-                                      z_col,
-                                      channel_label=channel_label,
-                                      )
+        self.datastruc = file_to_datastruc(
+            path,
+            file_type,
+            dim,
+            channel_col,
+            frame_col,
+            x_col,
+            y_col,
+            z_col,
+            channel_label=channel_label,
+        )
 
         # render histogram
         # generate histogram
         if self.datastruc.dim == 2:
             histo_size = (x_bins, y_bins)
-        elif self.datastruc.dim ==3:
+        elif self.datastruc.dim == 3:
             raise ValueError("No 3D capability atm")
         #    histo_size = (x_bins, y_bins, z_bins)
         self._render_histo(histo_size, vis_interpolation)
 
-    def _render_button_annot(self, path, file_type):
+    def _render_button_annot(self):
 
-        print('here 2')
-        
         # will change
-        z_col = None
-        dim = 2
+        # z_col = None
+        # dim = 2
 
         # parse the options
         x_bins = int(self.x_bins_menu_annot.text())
         y_bins = int(self.x_bins_menu_annot.text())
-        #self.z_bins =
-        vis_interpolation =  self.vis_interpolation_menu_annot.currentText()
-       
+        # self.z_bins =
+        vis_interpolation = self.vis_interpolation_menu_annot.currentText()
+
         # render histogram
         # generate histogram
         if self.datastruc.dim == 2:
             histo_size = (x_bins, y_bins)
-        elif self.datastruc.dim ==3:
+        elif self.datastruc.dim == 3:
             raise ValueError("No 3D capability atm")
         #    histo_size = (x_bins, y_bins, z_bins)
         self._render_histo(histo_size, vis_interpolation, labels=True)
 
-
     def _render_histo(self, histo_size, vis_interpolation, labels=False):
 
-        # print
-        if self.datastruc is not None:
-            print('here 0', self.datastruc.df)
-        
         self.datastruc.coord_2_histo(
-            histo_size,
-            vis_interpolation=vis_interpolation
+            histo_size, vis_interpolation=vis_interpolation
         )
 
         # clear images
@@ -484,44 +524,41 @@ class DatastrucWidget(QWidget):
 
         # render histogram
         if self.dim == 2:
-                # overlay all channels for src
-                if len(self.datastruc.channels) != 1:
-                    # create the viewer and add each channel (first channel on own,
-                    # then iterate through others)
-                    colormap_list = self.cmap
-                    # note image shape when plotted: [x, y]
-                    for index, chan in enumerate(self.datastruc.channels):
-                        self.viewer.add_image(
-                            self.datastruc.histo[chan].T,
-                            name=f"Channel {chan}/{self.datastruc.chan_2_label(chan)}",
-                            rgb=False,
-                            blending="additive",
-                            colormap=colormap_list[index],
-                            gamma=2,
-                            contrast_limits=[0, 30],
-                        )
-
-                # only one channel
-                else:
-                    img = self.datastruc.histo[self.datastruc.channels[0]].T
-                    # create the viewer and add the image
-                    viewer = napari.add_image(
-                        img,
-                        name=f"Channel {self.datastruc.channels[0]}/{self.datastruc.chan_2_label(self.datastruc.channels[0])}",
+            # overlay all channels for src
+            if len(self.datastruc.channels) != 1:
+                # create the viewer and add each channel (first channel on own,
+                # then iterate through others)
+                colormap_list = self.cmap
+                # note image shape when plotted: [x, y]
+                for index, chan in enumerate(self.datastruc.channels):
+                    self.viewer.add_image(
+                        self.datastruc.histo[chan].T,
+                        name=f"Channel {chan}/{self.datastruc.chan_2_label(chan)}",
                         rgb=False,
+                        blending="additive",
+                        colormap=colormap_list[index],
                         gamma=2,
                         contrast_limits=[0, 30],
                     )
-                
-                # add labels if present
-                if labels:
-                    # note this has to be called after coord_2_histo to be in the
-                    # correct shape
-                    histo_mask = self.datastruc.render_seg()
-                    self.viewer.add_labels(
-                        histo_mask.T,
-                        name="Labels"
-                    )
+
+            # only one channel
+            else:
+                img = self.datastruc.histo[self.datastruc.channels[0]].T
+                # create the viewer and add the image
+                self.viewer = napari.add_image(
+                    img,
+                    name=f"Channel {self.datastruc.channels[0]}/{self.datastruc.chan_2_label(self.datastruc.channels[0])}",
+                    rgb=False,
+                    gamma=2,
+                    contrast_limits=[0, 30],
+                )
+
+            # add labels if present
+            if labels:
+                # note this has to be called after coord_2_histo to be in the
+                # correct shape
+                histo_mask = self.datastruc.render_seg()
+                self.viewer.add_labels(histo_mask.T, name="Labels")
 
         elif self.dim == 3:
             print("segment 3D image")
