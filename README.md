@@ -34,6 +34,47 @@ To install latest development version :
     pip install git+https://github.com/oubino/napari-locpix.git
 
 
+## Usage
+
+This plugin allows a user to 
+
+1. Read in SMLM data
+2. Visualise SMLM data in a histogram
+3. Add segmentations to the data
+4. Extract the underlying localisations from the segmentations
+
+## IO
+
+The input data can be in the form of a .csv or .parquet.
+
+We expect there to be 4 columns at least:
+
+* X coordinate
+* Y coordinate
+* Frame
+* Channel
+
+If the data has been annotated with this software we can also load this in.
+Note however we currently only support loading in annotated data saved as a .parquet folder.
+Therefore, we recommend always keeping a .parquet copy until loading in an annotated .csv
+is supported.
+
+The data can be outputted to a .parquet and a .csv
+
+This includes the annotated data.
+
+## Visualisation
+
+Using the render button you can render the loaded in data
+
+## Segmentation
+
+Segmentations can be added using Napari's viewer.
+
+Simply click the add Labels.
+
+Note that this software will expect the labels to be called "Labels"
+
 ## Contributing
 
 Contributions are very welcome. Tests can be run with [tox], please ensure
