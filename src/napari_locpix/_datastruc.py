@@ -539,6 +539,8 @@ class item:
 
         histo = np.empty((histo_width, histo_height), dtype=np.int64)
 
+        print('labels', labels)
+
         histo[x_pixels, y_pixels] = labels
 
         return histo
