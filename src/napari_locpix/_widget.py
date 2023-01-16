@@ -558,11 +558,6 @@ class DatastrucWidget(QWidget):
                 # note this has to be called after coord_2_histo to be in the
                 # correct shape
                 histo_mask = self.datastruc.render_seg()
-                import numpy as np
-                print(histo_mask)
-                print(histo_mask.shape)
-                print(np.min(histo_mask))
-                print(np.max(histo_mask))
                 self.viewer.add_labels(histo_mask.T, name="Labels")
 
         elif self.dim == 3:
