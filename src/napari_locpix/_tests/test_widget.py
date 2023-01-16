@@ -1,9 +1,10 @@
-import numpy as np
+import os
+
 import polars as pl
 import pyarrow.parquet as pq
-import os
-from polars.testing import assert_frame_equal
 import pytest
+from polars.testing import assert_frame_equal
+
 from napari_locpix import DatastrucWidget
 
 # add label adds widget
@@ -43,7 +44,9 @@ def test_load_raw_csv(make_napari_viewer):
     # call widget method
     widget._load_raw_data(test_file_path)
 
+
 # test load annotate
+
 
 def test_load_annot_parquet(make_napari_viewer):
 
@@ -59,7 +62,8 @@ def test_load_annot_parquet(make_napari_viewer):
     # call widget method
     widget._load_annot_data(test_file_path)
 
-#def test_load_annot_csv(make_napari_viewer):
+
+# def test_load_annot_csv(make_napari_viewer):
 #
 #    # test file path
 #    test_file_path = "src/napari_locpix/_tests/test.csv"
@@ -72,6 +76,7 @@ def test_load_annot_parquet(make_napari_viewer):
 #
 #    # call widget method
 #    widget._load_annot_data(test_file_path)
+
 
 @pytest.fixture
 def setup_test_write_parquet(make_napari_viewer):
@@ -102,19 +107,26 @@ def setup_test_write_parquet(make_napari_viewer):
     in_table_schema = in_table.schema
     out_table_schema = out_table.schema
 
-    yield in_table_schema, out_table_schema, in_table, out_table, 
+    yield in_table_schema, out_table_schema, in_table, out_table,
     os.remove(out_test_file_path)
+
 
 def test_write_parquet(setup_test_write_parquet):
 
-    in_table_schema, out_table_schema, in_table, out_table = setup_test_write_parquet
+    (
+        in_table_schema,
+        out_table_schema,
+        in_table,
+        out_table,
+    ) = setup_test_write_parquet
 
-    assert(in_table_schema==out_table_schema)
+    assert in_table_schema == out_table_schema
 
     in_table = pl.from_arrow(in_table)
     out_table = pl.from_arrow(out_table)
 
     assert_frame_equal(in_table, out_table, check_row_order=False)
+
 
 @pytest.fixture
 def setup_test_write_csv(make_napari_viewer):
@@ -144,9 +156,10 @@ def setup_test_write_csv(make_napari_viewer):
     yield in_table, out_table
     os.remove(out_test_file_path)
 
-#def test_write_csv(setup_test_write_csv):
 
-#    in_table, out_table = setup_test_write_csv 
+# def test_write_csv(setup_test_write_csv):
+
+#    in_table, out_table = setup_test_write_csv
 
 #    assert assert_frame_equal(in_table, out_table)
 
@@ -174,6 +187,7 @@ def test_add_labels(make_napari_viewer):
     # test add label
     widget._add_label()
 
+
 def test_render_button_parquet(make_napari_viewer):
 
     # test file path
@@ -189,7 +203,7 @@ def test_render_button_parquet(make_napari_viewer):
     widget._load_raw_data(test_file_path)
 
     # render
-    widget._render_button(test_file_path, file_type='parquet')
+    widget._render_button(test_file_path, file_type="parquet")
 
 
 def test_render_button_csv(make_napari_viewer):
@@ -207,7 +221,7 @@ def test_render_button_csv(make_napari_viewer):
     widget._load_raw_data(test_file_path)
 
     # render
-    widget._render_button(test_file_path, file_type='csv')
+    widget._render_button(test_file_path, file_type="csv")
 
 
 def test_render_button_annot_parquet(make_napari_viewer):
@@ -226,11 +240,11 @@ def test_render_button_annot_parquet(make_napari_viewer):
 
     # render
     widget._render_button_annot()
-    
+
 
 # make_napari_viewer is a pytest fixture that returns a napari viewer object
 # capsys is a pytest fixture that captures stdout and stderr output streams
-#def test_write_parquet(make_napari_viewer, capsys):
+# def test_write_parquet(make_napari_viewer, capsys):
 #
 #
 #

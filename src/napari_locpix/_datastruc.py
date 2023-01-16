@@ -5,12 +5,13 @@ SMLM dataitem will be parsed as.
 
 """
 
+import ast
+import json
+import os
+
 import numpy as np
 import polars as pl
 import pyarrow.parquet as pq
-import ast
-import os
-import json
 
 _interpolate = {
     "log2": lambda d: np.log2(d),

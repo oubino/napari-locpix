@@ -7,24 +7,24 @@ see: https://napari.org/stable/plugins/guides.html?#widgets
 """
 from typing import TYPE_CHECKING
 
+import polars as pl
+from qtpy import QtCore
+from qtpy.compat import getopenfilename, getsavefilename
+from qtpy.QtGui import QIntValidator
 from qtpy.QtWidgets import (
-    QHBoxLayout,
-    QGridLayout,
-    QVBoxLayout,
-    QStackedLayout,
-    QPushButton,
-    QWidget,
     QComboBox,
     QFormLayout,
+    QGridLayout,
+    QHBoxLayout,
     QLabel,
     QLineEdit,
+    QPushButton,
+    QStackedLayout,
+    QVBoxLayout,
+    QWidget,
 )
-from qtpy import QtCore
-from qtpy.QtGui import QIntValidator
-from qtpy.compat import getopenfilename, getsavefilename
 
 from ._datastruc import file_to_datastruc, item
-import polars as pl
 
 if TYPE_CHECKING:
     import napari
@@ -273,7 +273,6 @@ class DatastrucWidget(QWidget):
 
         self._load_raw_data(path)
 
-
     def _load_raw_data(self, path):
 
         # if user wants to change cmap let them do this in napari
@@ -308,22 +307,30 @@ class DatastrucWidget(QWidget):
         self.y_col_menu.addItems(df.columns)
 
         # try and find matching
-        channel_index = self.channel_col_menu.findText("chan", flags=QtCore.Qt.MatchStartsWith)
-        print('channel index', channel_index)
+        channel_index = self.channel_col_menu.findText(
+            "chan", flags=QtCore.Qt.MatchStartsWith
+        )
+        print("channel index", channel_index)
         if channel_index != -1:
             self.channel_col_menu.setCurrentIndex(channel_index)
-        frame_index = self.frame_col_menu.findText("fram", flags=QtCore.Qt.MatchStartsWith)
+        frame_index = self.frame_col_menu.findText(
+            "fram", flags=QtCore.Qt.MatchStartsWith
+        )
         if frame_index != -1:
             self.frame_col_menu.setCurrentIndex(frame_index)
-        x_index = self.x_col_menu.findText("x", flags=QtCore.Qt.MatchStartsWith)
+        x_index = self.x_col_menu.findText(
+            "x", flags=QtCore.Qt.MatchStartsWith
+        )
         if x_index != -1:
             self.x_col_menu.setCurrentIndex(x_index)
-        y_index = self.y_col_menu.findText("y", flags=QtCore.Qt.MatchStartsWith)
+        y_index = self.y_col_menu.findText(
+            "y", flags=QtCore.Qt.MatchStartsWith
+        )
         if y_index != -1:
             self.y_col_menu.setCurrentIndex(y_index)
 
     def _load_annot_data_fd(self):
-        
+
         # get path
         path = getopenfilename(
             self, "Open file", "/home/some/folder", "Files (*.csv *.parquet)"
@@ -332,7 +339,6 @@ class DatastrucWidget(QWidget):
         path = path[0]
 
         self._load_annot_data(path)
-
 
     def _load_annot_data(self, path):
 
@@ -367,7 +373,6 @@ class DatastrucWidget(QWidget):
         self.render_button_annot.clicked.connect(
             lambda: self._render_button_annot(path, file_type)
         )
-    
 
     def _write_csv_fd(self):
 
@@ -382,7 +387,6 @@ class DatastrucWidget(QWidget):
         path = path[0]
 
         self._write_csv(path)
-
 
     def _write_csv(self, path):
 
