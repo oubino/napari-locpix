@@ -371,7 +371,7 @@ class DatastrucWidget(QWidget):
         except:
             pass
         self.render_button_annot.clicked.connect(
-            lambda: self._render_button_annot(path, file_type)
+            lambda: self._render_button_annot()
         )
 
     def _write_csv_fd(self):

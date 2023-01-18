@@ -257,6 +257,11 @@ class item:
         elif self.dim == 3:
             x_pixel_width, y_pixel_width, z_pixel_width = self.bin_sizes
 
+        # drop pixel columns if already present
+        for col in ["x_pixel", "y_pixel", "z_pixel"]:
+            if col in self.df.columns:
+                self.df = self.df.drop(col)
+
         # calculate pixel indices for localisations
         self.df = self.df.select(
             [
