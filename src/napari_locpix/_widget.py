@@ -302,6 +302,7 @@ class DatastrucWidget(QWidget):
             lambda: self._render_button(path, file_type)
         )
         self.channel_col_menu.addItems(df.columns)
+        self.frame_col_menu.addItem("None")
         self.frame_col_menu.addItems(df.columns)
         self.x_col_menu.addItems(df.columns)
         self.y_col_menu.addItems(df.columns)
@@ -460,6 +461,8 @@ class DatastrucWidget(QWidget):
         # parse the options
         channel_col = self.channel_col_menu.currentText()
         frame_col = self.frame_col_menu.currentText()
+        if frame_col == "None":
+            frame_col = None
         x_col = self.x_col_menu.currentText()
         y_col = self.y_col_menu.currentText()
         # self.z_col = self.z_col_menu.currentText()
@@ -480,10 +483,10 @@ class DatastrucWidget(QWidget):
             file_type,
             dim,
             channel_col,
-            frame_col,
             x_col,
             y_col,
             z_col,
+            frame_col=frame_col,
             channel_label=channel_label,
         )
 
