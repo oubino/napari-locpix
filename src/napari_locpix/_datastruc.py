@@ -29,7 +29,7 @@ class item:
     Attributes:
         name (string) : Contains the name of the item
         df (polars dataframe): Dataframe with the data contained, containing
-            columns: 'channel' 'frame' 'x' 'y' 'z'.
+            columns: 'channel' 'x' 'y' 'z' (opt frame).
             If manual annotation is done an additional column 'gt_label'
             will be present
         dim (int): Dimensions of data
@@ -555,15 +555,15 @@ def file_to_datastruc(
     file_type,
     dim,
     channel_col,
-    frame_col,
     x_col,
     y_col,
     z_col,
+    frame_col=None,
     channel_label=None,
 ):
     """Loads in .csv or .parquet and converts to the required datastructure.
 
-    Currently considers the following columns: channel frame x y z
+    Currently considers the following columns: channel x y z (frame)
     Also user can specify the channels they want to consider, these
     should be present in the channels column
 
@@ -574,10 +574,10 @@ def file_to_datastruc(
         dim (int) : Dimensions to consider either 2 or 3
         channel_col (string) : Name of column which gives channel
             for localisation
-        frame_col (string) : Name of column which gives frame for localisation
         x_col (string) : Name of column which gives x for localisation
         y_col (string) : Name of column which gives y for localisation
         z_col (string) : Name of column which gives z for localisation
+        frame_col (string) : [Optional] Name of column which gives frame for localisation
         channel_label (list of strings) : If specified then this is the
             label for each channel i.e. ['egfr', 'ereg','unk'] means
             channel 0 is egfr protein, channel 1 is ereg proteins and
@@ -600,42 +600,62 @@ def file_to_datastruc(
         raise ValueError(
             f"{file_type} is not supported, should be csv or parquet"
         )
+    
+    if frame_col:
+        columns = [channel_col, frame_col, x_col, y_col]
+    elif not frame_col:
+        columns = [channel_col, x_col, y_col]
+    if dim == 3:
+        columns.append(z_col)
 
     # Load in data
     if dim == 2:
         if file_type == "csv":
+
             df = pl.read_csv(
-                input_file, columns=[channel_col, frame_col, x_col, y_col]
+                input_file, columns=columns
             )
         elif file_type == "parquet":
             df = pl.read_parquet(
-                input_file, columns=[channel_col, frame_col, x_col, y_col]
+                input_file, columns=columns
             )
         df = df.rename(
             {
                 channel_col: "channel",
-                frame_col: "frame",
                 x_col: "x",
                 y_col: "y",
             }
         )
+        
+        if frame_col:
+            df = df.rename(
+            {
+                frame_col: "frame"
+            }
+        )
+
     elif dim == 3:
         if file_type == "csv":
             df = pl.read_csv(
                 input_file,
-                columns=[channel_col, frame_col, x_col, y_col, z_col],
+                columns=columns,
             )
         elif file_type == "parquet":
             df = pl.read_parquet(
-                input_file, columns=[channel_col, frame_col, x_col, y_col]
+                input_file, columns=columns
             )
         df = df.rename(
             {
                 channel_col: "channel",
-                frame_col: "frame",
                 x_col: "x",
                 y_col: "y",
                 z_col: "z",
+            }
+        )
+        if frame_col:
+            df = df.rename(
+            {
+                frame_col: "frame"
             }
         )
 
