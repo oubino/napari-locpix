@@ -59,6 +59,11 @@ class item:
             representing the gt labels for each localisation
             with value being a string, representing the
             real concept e.g. 0:'dog', 1:'cat'
+        x_col_name (string): Name of the x column
+        y_col_name (string): Name of the y column
+        z_col_name (string): Name of the z column
+        frame_col_name (string): Name of the frame column
+        chan_col_name (string): Name of the channel column
     """
 
     def __init__(
@@ -73,6 +78,11 @@ class item:
         histo_mask={},
         bin_sizes=None,
         gt_label_map={},
+        x_col=None,
+        y_col=None,
+        z_col=None,
+        frame_col=None,
+        chan_col=None,
     ):
         """Initialises item"""
 
@@ -86,6 +96,11 @@ class item:
         self.channels = channels
         self.channel_label = channel_label
         self.gt_label_map = gt_label_map
+        self.x_col = x_col
+        self.y_col = y_col
+        self.z_col = z_col
+        self.frame_col = frame_col
+        self.chan_col = chan_col
 
         # channel labels and channel choice need to be same in length
         if (channels is not None) or (channel_label is not None):
@@ -145,14 +160,14 @@ class item:
 
         if self.dim == 2:
             x_bins, y_bins = histo_size
-            x_max = df_max["x"][0]
-            y_max = df_max["y"][0]
-            x_min = df_min["x"][0]
-            y_min = df_min["y"][0]
+            x_max = df_max[self.x_col][0]
+            y_max = df_max[self.y_col][0]
+            x_min = df_min[self.x_col][0]
+            y_min = df_min[self.y_col][0]
         elif self.dim == 3:
             x_bins, y_bins, z_bins = histo_size
-            z_max = df_max["z"][0]
-            z_min = df_min["z"][0]
+            z_max = df_max[self.z_col][0]
+            z_min = df_min[self.z_col][0]
 
         # if instead want desired bin size e.g. 50nm, 50nm, 50nm
         # number of bins required for desired bin_size
@@ -196,8 +211,8 @@ class item:
         if self.dim == 2:
             # 2D histogram for every channel, assigned to self.histo (dict)
             for chan in self.channels:
-                df = self.df.filter(pl.col("channel") == chan)
-                sample = np.array((df["x"], df["y"]))
+                df = self.df.filter(pl.col(self.chan_col) == chan)
+                sample = np.array((df[self.x_col], df[self.y_col]))
                 sample = np.swapaxes(sample, 0, 1)
                 # (D, N) where D is
                 # self.dim and N is number of localisations
@@ -208,8 +223,10 @@ class item:
         if self.dim == 3:
             # 3D histogram for every channel, assigned to self.histo (dict)
             for chan in self.channels:
-                df = self.df[self.df["channel"] == chan]
-                sample = np.array((df["x"], df["y"], df["z"]))
+                df = self.df[self.df[self.chan_col] == chan]
+                sample = np.array(
+                    (df[self.x_col], df[self.y_col], df[self.z_col])
+                )
                 sample = np.swapaxes(sample, 0, 1)
                 # (D, N) where D is self.dim and N is number of
                 # localisations
@@ -237,7 +254,7 @@ class item:
 
         # print('check')
         # for chan in self.channels:
-        #    df = self.df.filter(pl.col("channel") == chan)
+        #    df = self.df.filter(pl.col(self.chan_col) == chan)
         #    my_x = df["x_pixel"].to_numpy()
         #    my_y = df["y_pixel"].to_numpy()
         #    their_x = np.digitize(df['x'], bins=self.histo_edges[0])
@@ -251,8 +268,8 @@ class item:
 
         # necessary for pd.eval below
         df_min = self.df.min()
-        x_min = df_min["x"][0]
-        y_min = df_min["y"][0]
+        x_min = df_min[self.x_col][0]
+        y_min = df_min[self.y_col][0]
 
         if self.dim == 2:
             x_pixel_width, y_pixel_width = self.bin_sizes
@@ -268,10 +285,10 @@ class item:
         self.df = self.df.select(
             [
                 pl.all(),
-                pl.col("x")
+                pl.col(self.x_col)
                 .map(lambda q: (q - x_min) / x_pixel_width)
                 .alias("x_pixel"),
-                pl.col("y")
+                pl.col(self.y_col)
                 .map(lambda q: (q - y_min) / y_pixel_width)
                 .alias("y_pixel"),
             ]
@@ -300,12 +317,12 @@ class item:
         # )
 
         if self.dim == 3:
-            z_min = df_min["z"][0]
+            z_min = df_min[self.z_col][0]
             # calculate pixel indices for localisations
             self.df = self.df.select(
                 [
                     pl.all(),
-                    pl.col("z")
+                    pl.col(self.z_col)
                     .map(lambda q: (q - z_min) / z_pixel_width)
                     .alias("z_pixel"),
                 ]
@@ -414,9 +431,11 @@ class item:
         if save_chan_label:
             label_df = pl.DataFrame(
                 {"chan_label": self.channel_label}
-            ).with_row_count("channel")
-            label_df = label_df.with_columns(pl.col("channel").cast(pl.Int64))
-            save_df = save_df.join(label_df, on="channel", how="inner")
+            ).with_row_count(self.chan_col)
+            label_df = label_df.with_columns(
+                pl.col(self.chan_col).cast(pl.Int64)
+            )
+            save_df = save_df.join(label_df, on=self.chan_col, how="inner")
         # save to location
         save_df.write_csv(csv_loc)
 
@@ -609,51 +628,13 @@ def file_to_datastruc(
             f"{file_type} is not supported, should be csv or parquet"
         )
 
-    if frame_col:
-        columns = [channel_col, frame_col, x_col, y_col]
-    elif not frame_col:
-        columns = [channel_col, x_col, y_col]
-    if dim == 3:
-        columns.append(z_col)
-
     # Load in data
-    if dim == 2:
-        if file_type == "csv":
+    if file_type == "csv":
+        df = pl.read_csv(input_file)
+    elif file_type == "parquet":
+        df = pl.read_parquet(input_file)
 
-            df = pl.read_csv(input_file, columns=columns)
-        elif file_type == "parquet":
-            df = pl.read_parquet(input_file, columns=columns)
-        df = df.rename(
-            {
-                channel_col: "channel",
-                x_col: "x",
-                y_col: "y",
-            }
-        )
-
-        if frame_col:
-            df = df.rename({frame_col: "frame"})
-
-    elif dim == 3:
-        if file_type == "csv":
-            df = pl.read_csv(
-                input_file,
-                columns=columns,
-            )
-        elif file_type == "parquet":
-            df = pl.read_parquet(input_file, columns=columns)
-        df = df.rename(
-            {
-                channel_col: "channel",
-                x_col: "x",
-                y_col: "y",
-                z_col: "z",
-            }
-        )
-        if frame_col:
-            df = df.rename({frame_col: "frame"})
-
-    channels = df["channel"].unique()
+    channels = df[channel_col].unique()
     channels = sorted(channels)
     print("channels", channels)
 
@@ -663,4 +644,15 @@ def file_to_datastruc(
     elif file_type == "parquet":
         name = os.path.basename(os.path.normpath(input_file))[:-8]
 
-    return item(name, df, dim, channels, channel_label)
+    return item(
+        name,
+        df,
+        dim,
+        channels,
+        channel_label,
+        x_col=x_col,
+        y_col=y_col,
+        z_col=z_col,
+        frame_col=frame_col,
+        chan_col=channel_col,
+    )

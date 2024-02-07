@@ -22,6 +22,7 @@ from qtpy.QtWidgets import (
     QStackedLayout,
     QVBoxLayout,
     QWidget,
+    QCheckBox,
 )
 
 from ._datastruc import file_to_datastruc, item
@@ -89,9 +90,15 @@ class DatastrucWidget(QWidget):
         write_box.addWidget(write_csv_btn)
         write_box.addWidget(write_parquet_btn)
 
+        # drop zero label
+        self.drop_zero_box = QCheckBox("Drop localisations with zero label")
+        drop_zero_box_layout = QHBoxLayout()
+        drop_zero_box_layout.addWidget(self.drop_zero_box)
+
         # bring together io
         io.addLayout(load_box)
         io.addLayout(write_box)
+        io.addLayout(drop_zero_box_layout)
 
         # self.setLayout(self.form)
         # self.layout().addWidget(load_raw_btn)
@@ -398,10 +405,13 @@ class DatastrucWidget(QWidget):
         except KeyError:
             print("No labels saved")
 
+        # drop zero labels
+        drop_zero_label = self.drop_zero_box.isChecked()
+
         # save to this location
         self.datastruc.save_df_to_csv(
             path,
-            drop_zero_label=False,
+            drop_zero_label=drop_zero_label,
             drop_pixel_col=True,  # has to be true to avoid double occurence later
             save_chan_label=True,
         )
@@ -443,10 +453,13 @@ class DatastrucWidget(QWidget):
         except KeyError:
             print("No labels saved")
 
+        # drop zero labels
+        drop_zero_label = self.drop_zero_box.isChecked()
+
         # save to this location
         self.datastruc.save_to_parquet(
             path,
-            drop_zero_label=False,
+            drop_zero_label=drop_zero_label,
             drop_pixel_col=True,  # has to be true to avoid double occurence later
             gt_label_map=gt_label_map,
             overwrite=False,
