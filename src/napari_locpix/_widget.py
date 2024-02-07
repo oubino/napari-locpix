@@ -373,7 +373,7 @@ class DatastrucWidget(QWidget):
             raise ValueError("Not implemented yet!")
 
         # update form
-        self.stackedLayout.setCurrentIndex(1)
+        self.stackedLayout.setCurrentIndex(0)
         # avoid multiple firing of button due to history
         try:
             self.render_button_annot.clicked.disconnect()
