@@ -187,6 +187,43 @@ class DatastrucWidget(QWidget):
         load_annot_data_widget = QWidget()
         load_annot_data_form = QFormLayout()
 
+        # load choices into widget and add render button
+        load_annot_data_form.addRow(QLabel("File column selection"))
+
+        self.channel_col_menu = QComboBox()
+        load_annot_data_form.addRow("Channel: ", self.channel_col_menu)
+
+        self.frame_col_menu = QComboBox()
+        load_raw_data_form.addRow("Frame: ", self.frame_col_menu)
+
+        self.x_col_menu = QComboBox()
+        load_annot_data_form.addRow("x: ", self.x_col_menu)
+
+        self.y_col_menu = QComboBox()
+        load_annot_data_form.addRow("y: ", self.y_col_menu)
+
+        # z_col_menu = QComboBox()
+        # z_col_menu.addItems(df.columns)
+        # load_raw_data_form.addRow("Channel col", self.z_col_menu)
+
+        load_annot_data_form.addRow(QLabel("Channel labels"))
+
+        self.channel_zero_label = QLineEdit("unk")
+        self.channel_zero_label.setToolTip("Protein present in channel zero")
+        load_annot_data_form.addRow("Chan 0 label: ", self.channel_zero_label)
+
+        self.channel_one_label = QLineEdit("unk")
+        self.channel_one_label.setToolTip("Protein present in channel one")
+        load_annot_data_form.addRow("Chan 1 label: ", self.channel_one_label)
+
+        self.channel_two_label = QLineEdit("unk")
+        self.channel_two_label.setToolTip("Protein present in channel two")
+        load_annot_data_form.addRow("Chan 2 label: ", self.channel_two_label)
+
+        self.channel_three_label = QLineEdit("unk")
+        self.channel_three_label.setToolTip("Protein present in channel three")
+        load_annot_data_form.addRow("Chan 3 label: ", self.channel_three_label)
+
         self.x_bins_menu_annot = QLineEdit("500")
         self.x_bins_menu_annot.setValidator(QIntValidator())
         self.x_bins_menu_annot.setToolTip("Number of bins in x dimension")
@@ -373,7 +410,7 @@ class DatastrucWidget(QWidget):
             raise ValueError("Not implemented yet!")
 
         # update form
-        self.stackedLayout.setCurrentIndex(0)
+        self.stackedLayout.setCurrentIndex(1)
         # avoid multiple firing of button due to history
         try:
             self.render_button_annot.clicked.disconnect()
