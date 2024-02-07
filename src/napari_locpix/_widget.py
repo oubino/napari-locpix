@@ -368,6 +368,7 @@ class DatastrucWidget(QWidget):
             self.datastruc = item(None, None, None, None, None)
             self.datastruc.load_from_parquet(path)
             print(self.datastruc.gt_label_map)
+            df = pl.scan_parquet(path)
         elif file_type == "csv":
             raise ValueError("Not implemented yet!")
 
@@ -381,6 +382,35 @@ class DatastrucWidget(QWidget):
         self.render_button_annot.clicked.connect(
             lambda: self._render_button_annot()
         )
+
+        self.channel_col_menu.addItems(df.columns)
+        self.frame_col_menu.addItem("None")
+        self.frame_col_menu.addItems(df.columns)
+        self.x_col_menu.addItems(df.columns)
+        self.y_col_menu.addItems(df.columns)
+
+        # try and find matching
+        channel_index = self.channel_col_menu.findText(
+            "chan", flags=QtCore.Qt.MatchStartsWith
+        )
+        print("channel index", channel_index)
+        if channel_index != -1:
+            self.channel_col_menu.setCurrentIndex(channel_index)
+        frame_index = self.frame_col_menu.findText(
+            "fram", flags=QtCore.Qt.MatchStartsWith
+        )
+        if frame_index != -1:
+            self.frame_col_menu.setCurrentIndex(frame_index)
+        x_index = self.x_col_menu.findText(
+            "x", flags=QtCore.Qt.MatchStartsWith
+        )
+        if x_index != -1:
+            self.x_col_menu.setCurrentIndex(x_index)
+        y_index = self.y_col_menu.findText(
+            "y", flags=QtCore.Qt.MatchStartsWith
+        )
+        if y_index != -1:
+            self.y_col_menu.setCurrentIndex(y_index)
 
     def _write_csv_fd(self):
 
@@ -515,8 +545,22 @@ class DatastrucWidget(QWidget):
     def _render_button_annot(self):
 
         # will change
-        # z_col = None
+        z_col = None
         # dim = 2
+
+        # parse the options
+        channel_col = self.channel_col_menu.currentText()
+        frame_col = self.frame_col_menu.currentText()
+        if frame_col == "None":
+            frame_col = None
+        x_col = self.x_col_menu.currentText()
+        y_col = self.y_col_menu.currentText()
+
+        self.datastruc.x_col = x_col
+        self.datastruc.y_col = y_col
+        self.datastruc.z_col = z_col
+        self.datastruc.frame_col = frame_col
+        self.datastruc.chan_col = channel_col
 
         # parse the options
         x_bins = int(self.x_bins_menu_annot.text())
