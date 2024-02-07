@@ -418,7 +418,7 @@ class item:
             label_df = label_df.with_columns(pl.col("channel").cast(pl.Int64))
             save_df = save_df.join(label_df, on="channel", how="inner")
         # save to location
-        save_df.write_csv(csv_loc, sep=",")
+        save_df.write_csv(csv_loc)
 
     def save_to_parquet(
         self,
