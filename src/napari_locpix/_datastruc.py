@@ -167,7 +167,8 @@ class item:
         # very close to desired tests size)
         x_bin_size = (x_max - x_min) / x_bins
         y_bin_size = (y_max - y_min) / y_bins
-        # need to increase bin size very marginally to include last localisation
+        # need to increase bin size very marginally to include
+        # last localisation
         x_bin_size = x_bin_size * 1.001
         y_bin_size = y_bin_size * 1.001
         # location of edges of histogram, based on actual tests size
@@ -176,7 +177,8 @@ class item:
         # treat z separately, as often only in 2D
         if self.dim == 3:
             z_bin_size = (z_max - z_min) / z_bins
-            # need to increase bin size very marginally to include last localisation
+            # need to increase bin size very marginally to include last
+            # localisation
             z_bin_size = z_bin_size * 1.001
             z_edges = [z_min + z_bin_size * i for i in range(z_bins + 1)]
 
@@ -275,8 +277,12 @@ class item:
             ]
         )
         # floor the pixel locations
-        self.df = self.df.with_columns(pl.col("x_pixel").cast(int, strict=True))
-        self.df = self.df.with_columns(pl.col("y_pixel").cast(int, strict=True))
+        self.df = self.df.with_columns(
+            pl.col("x_pixel").cast(int, strict=True)
+        )
+        self.df = self.df.with_columns(
+            pl.col("y_pixel").cast(int, strict=True)
+        )
 
         # localisations at the end get assigned to outside the histogram,
         # therefore need to be assigned to previous pixel
@@ -338,7 +344,7 @@ class item:
             data = {"x_pixel": x_pixel, "y_pixel": y_pixel, "gt_label": label}
             mask_df = pl.DataFrame(
                 data,
-                columns=[
+                schema=[
                     ("x_pixel", pl.Int64),
                     ("y_pixel", pl.Int64),
                     ("gt_label", pl.Int64),
@@ -479,7 +485,8 @@ class item:
         arrow_table = arrow_table.replace_schema_metadata(merged_metadata)
         if os.path.exists(save_loc) and not overwrite:
             raise ValueError(
-                "Cannot overwite. If you want to overwrite please set overwrite==True"
+                "Cannot overwite. If you want to "
+                "overwrite please set overwrite==True"
             )
         pq.write_table(arrow_table, save_loc)
 
@@ -577,7 +584,8 @@ def file_to_datastruc(
         x_col (string) : Name of column which gives x for localisation
         y_col (string) : Name of column which gives y for localisation
         z_col (string) : Name of column which gives z for localisation
-        frame_col (string) : [Optional] Name of column which gives frame for localisation
+        frame_col (string) : [Optional] Name of column
+        which gives frame for localisation
         channel_label (list of strings) : If specified then this is the
             label for each channel i.e. ['egfr', 'ereg','unk'] means
             channel 0 is egfr protein, channel 1 is ereg proteins and
@@ -600,7 +608,7 @@ def file_to_datastruc(
         raise ValueError(
             f"{file_type} is not supported, should be csv or parquet"
         )
-    
+
     if frame_col:
         columns = [channel_col, frame_col, x_col, y_col]
     elif not frame_col:
@@ -612,13 +620,9 @@ def file_to_datastruc(
     if dim == 2:
         if file_type == "csv":
 
-            df = pl.read_csv(
-                input_file, columns=columns
-            )
+            df = pl.read_csv(input_file, columns=columns)
         elif file_type == "parquet":
-            df = pl.read_parquet(
-                input_file, columns=columns
-            )
+            df = pl.read_parquet(input_file, columns=columns)
         df = df.rename(
             {
                 channel_col: "channel",
@@ -626,13 +630,9 @@ def file_to_datastruc(
                 y_col: "y",
             }
         )
-        
+
         if frame_col:
-            df = df.rename(
-            {
-                frame_col: "frame"
-            }
-        )
+            df = df.rename({frame_col: "frame"})
 
     elif dim == 3:
         if file_type == "csv":
@@ -641,9 +641,7 @@ def file_to_datastruc(
                 columns=columns,
             )
         elif file_type == "parquet":
-            df = pl.read_parquet(
-                input_file, columns=columns
-            )
+            df = pl.read_parquet(input_file, columns=columns)
         df = df.rename(
             {
                 channel_col: "channel",
@@ -653,11 +651,7 @@ def file_to_datastruc(
             }
         )
         if frame_col:
-            df = df.rename(
-            {
-                frame_col: "frame"
-            }
-        )
+            df = df.rename({frame_col: "frame"})
 
     channels = df["channel"].unique()
     channels = sorted(channels)
