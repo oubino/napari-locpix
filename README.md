@@ -28,7 +28,6 @@ You can install `napari-locpix` via [pip]:
     pip install napari-locpix
 
 
-
 To install latest development version :
 
     pip install git+https://github.com/oubino/napari-locpix.git
@@ -36,7 +35,7 @@ To install latest development version :
 
 ## Usage
 
-This plugin allows a user to 
+This plugin allows a user to
 
 1. Read in SMLM data
 2. Visualise SMLM data in a histogram
