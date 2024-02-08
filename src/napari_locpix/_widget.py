@@ -469,6 +469,7 @@ class DatastrucWidget(QWidget):
 
         except KeyError:
             print("No labels saved")
+            gt_label_map={}
 
         # drop zero labels
         drop_zero_label = self.drop_zero_box.isChecked()
