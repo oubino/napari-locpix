@@ -42,11 +42,11 @@ This plugin allows a user to
 3. Add segmentations to the data
 4. Extract the underlying localisations from the segmentations
 
-## IO
+### IO
 
 The input data can be in the form of a .csv or .parquet.
 
-We expect there to be 4 columns at least:
+We expect there to be 4 columns at least, which should he identified inthe file column selection:
 
 * X coordinate
 * Y coordinate
@@ -58,17 +58,23 @@ Note however we currently only support loading in annotated data saved as a .par
 Therefore, we recommend always keeping a .parquet copy until loading in an annotated .csv
 is supported.
 
-The data can be outputted to a .parquet and a .csv
+The data can be outputted to a .parquet or a .csv
 
-This includes the annotated data.
+Drop localisations with zero label, gives you the option to only save the localisations which have been annotated i.e. labels 1 and above.
 
-## Visualisation
+Channels labels allows you to give a real name label to each of the channels e.g. Chan 0 label: 'Alexa 647'
 
-Using the render button you can render the loaded in data
+### Visualisation
 
-## Segmentation
+Using the render button you can render the loaded in data according to the histogram settings
 
-Segmentations can be added using Napari's viewer.
+X/Y bins defines the number of bins for the histogram
+
+Vis interpolation defines how to interpolate the image before viewing
+
+### Annotations
+
+Annotations can be added using Napari's viewer.
 
 Simply click the add Labels.
 
