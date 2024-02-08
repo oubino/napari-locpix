@@ -569,8 +569,8 @@ class DatastrucWidget(QWidget):
             self._render_histo(histo_size, vis_interpolation, labels=False)
         else:
             self._render_histo(histo_size, vis_interpolation, labels=True)
-            self.label_widget.layout().itemAtPosition(0,0).widget().setText(gt_label_map[0])
-            self.label_widget.layout().itemAtPosition(1,0).widget().setText(gt_label_map[1])
+            self.label_widget.layout().itemAtPosition(0,1).widget().setText(gt_label_map[0])
+            self.label_widget.layout().itemAtPosition(1,1).widget().setText(gt_label_map[1])
             # add names
             label_layout = self.label_widget.layout()
             for i in gt_label_map.items():
