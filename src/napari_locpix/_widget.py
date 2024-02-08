@@ -491,7 +491,7 @@ class DatastrucWidget(QWidget):
         y_col = self.y_col_menu.currentText()
         # self.z_col = self.z_col_menu.currentText()
         x_bins = int(self.x_bins_menu.text())
-        y_bins = int(self.x_bins_menu.text())
+        y_bins = int(self.y_bins_menu.text())
         # self.z_bins =
         vis_interpolation = self.vis_interpolation_menu.currentText()
         channel_label = [
@@ -544,10 +544,10 @@ class DatastrucWidget(QWidget):
         self.datastruc.chan_col = channel_col
 
         # parse the options
-        x_bins = int(self.x_bins_menu_annot.text())
-        y_bins = int(self.x_bins_menu_annot.text())
+        x_bins = int(self.x_bins_menu.text())
+        y_bins = int(self.y_bins_menu.text())
         # self.z_bins =
-        vis_interpolation = self.vis_interpolation_menu_annot.currentText()
+        vis_interpolation = self.vis_interpolation_menu.currentText()
 
         # render histogram
         # generate histogram
