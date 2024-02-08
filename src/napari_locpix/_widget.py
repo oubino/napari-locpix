@@ -349,6 +349,7 @@ class DatastrucWidget(QWidget):
             self.datastruc = item(None, None, None, None, None)
             self.datastruc.load_from_parquet(path)
             print(self.datastruc.gt_label_map)
+            print(self.datastruc.channel_label)
             df = pl.scan_parquet(path)
         elif file_type == "csv":
             raise ValueError("Not implemented yet!")
