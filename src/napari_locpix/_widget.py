@@ -109,61 +109,58 @@ class DatastrucWidget(QWidget):
         # link label button
         # self._link()
 
-        # stacked layout for the options
-        self.stackedLayout = QStackedLayout()
-
         # load raw data form
-        load_raw_data_widget = QWidget()
-        load_raw_data_form = QFormLayout()
+        # load_data_widget = QWidget()
+        self.load_data_form = QFormLayout()
 
         # load choices into widget and add render button
-        load_raw_data_form.addRow(QLabel("File column selection"))
+        self.load_data_form.addRow(QLabel("File column selection"))
 
         self.channel_col_menu = QComboBox()
-        load_raw_data_form.addRow("Channel: ", self.channel_col_menu)
+        self.load_data_form.addRow("Channel: ", self.channel_col_menu)
 
         self.frame_col_menu = QComboBox()
-        load_raw_data_form.addRow("Frame: ", self.frame_col_menu)
+        self.load_data_form.addRow("Frame: ", self.frame_col_menu)
 
         self.x_col_menu = QComboBox()
-        load_raw_data_form.addRow("x: ", self.x_col_menu)
+        self.load_data_form.addRow("x: ", self.x_col_menu)
 
         self.y_col_menu = QComboBox()
-        load_raw_data_form.addRow("y: ", self.y_col_menu)
+        self.load_data_form.addRow("y: ", self.y_col_menu)
 
         # z_col_menu = QComboBox()
         # z_col_menu.addItems(df.columns)
         # load_raw_data_form.addRow("Channel col", self.z_col_menu)
 
-        load_raw_data_form.addRow(QLabel("Channel labels"))
+        self.load_data_form.addRow(QLabel("Channel labels"))
 
         self.channel_zero_label = QLineEdit("unk")
         self.channel_zero_label.setToolTip("Protein present in channel zero")
-        load_raw_data_form.addRow("Chan 0 label: ", self.channel_zero_label)
+        self.load_data_form.addRow("Chan 0 label: ", self.channel_zero_label)
 
         self.channel_one_label = QLineEdit("unk")
         self.channel_one_label.setToolTip("Protein present in channel one")
-        load_raw_data_form.addRow("Chan 1 label: ", self.channel_one_label)
+        self.load_data_form.addRow("Chan 1 label: ", self.channel_one_label)
 
         self.channel_two_label = QLineEdit("unk")
         self.channel_two_label.setToolTip("Protein present in channel two")
-        load_raw_data_form.addRow("Chan 2 label: ", self.channel_two_label)
+        self.load_data_form.addRow("Chan 2 label: ", self.channel_two_label)
 
         self.channel_three_label = QLineEdit("unk")
         self.channel_three_label.setToolTip("Protein present in channel three")
-        load_raw_data_form.addRow("Chan 3 label: ", self.channel_three_label)
+        self.load_data_form.addRow("Chan 3 label: ", self.channel_three_label)
 
-        load_raw_data_form.addRow(QLabel("Histogram settings"))
+        self.load_data_form.addRow(QLabel("Histogram settings"))
 
         self.x_bins_menu = QLineEdit("500")
         self.x_bins_menu.setValidator(QIntValidator())
         self.x_bins_menu.setToolTip("Number of bins in x dimension")
-        load_raw_data_form.addRow("X bins", self.x_bins_menu)
+        self.load_data_form.addRow("X bins", self.x_bins_menu)
 
         self.y_bins_menu = QLineEdit("500")
         self.y_bins_menu.setValidator(QIntValidator())
         self.y_bins_menu.setToolTip("Number of bins in y dimension")
-        load_raw_data_form.addRow("Y bins", self.y_bins_menu)
+        self.load_data_form.addRow("Y bins", self.y_bins_menu)
 
         self.vis_interpolation_menu = QComboBox()
         self.vis_interpolation_menu.addItems(["log2", "log10", "linear"])
@@ -171,53 +168,37 @@ class DatastrucWidget(QWidget):
             "Interpolation applied to the histogram when visualising"
             "the image of the histogram"
         )
-        load_raw_data_form.addRow(
+        self.load_data_form.addRow(
             "Vis interpolation", self.vis_interpolation_menu
         )
 
+        # format layout and add to stacked layout
+        # load_data_widget.setLayout(self.load_data_form)
+        # self.stackedLayout.addWidget(load_data_widget)
+
+        # stacked layout for the render
+        self.render_form = QStackedLayout()
+
         # render button
+        render_widget_raw = QWidget()
+        render_form_raw = QFormLayout()
         self.render_button = QPushButton("Render")
-        load_raw_data_form.addRow(self.render_button)
-
-        # format layout and add to stacked layout
-        load_raw_data_widget.setLayout(load_raw_data_form)
-        self.stackedLayout.addWidget(load_raw_data_widget)
-
-        # load annotated data
-        load_annot_data_widget = QWidget()
-        load_annot_data_form = QFormLayout()
-
-        self.x_bins_menu_annot = QLineEdit("500")
-        self.x_bins_menu_annot.setValidator(QIntValidator())
-        self.x_bins_menu_annot.setToolTip("Number of bins in x dimension")
-        load_annot_data_form.addRow("X bins", self.x_bins_menu_annot)
-
-        self.y_bins_menu_annot = QLineEdit("500")
-        self.y_bins_menu_annot.setValidator(QIntValidator())
-        self.y_bins_menu_annot.setToolTip("Number of bins in y dimension")
-        load_annot_data_form.addRow("Y bins", self.y_bins_menu_annot)
-
-        self.vis_interpolation_menu_annot = QComboBox()
-        self.vis_interpolation_menu_annot.addItems(["log2", "log10", "linear"])
-        self.vis_interpolation_menu_annot.setToolTip(
-            "Interpolation applied to the histogram when visualising"
-            "the image of the histogram"
-        )
-        load_annot_data_form.addRow(
-            "Vis interpolation", self.vis_interpolation_menu_annot
-        )
+        render_form_raw.addRow(self.render_button)
+        render_widget_raw.setLayout(render_form_raw)
+        self.render_form.addWidget(render_widget_raw)
 
         # render button
+        render_widget_annot = QWidget()
+        render_form_annot = QFormLayout()
         self.render_button_annot = QPushButton("Render")
-        load_annot_data_form.addRow(self.render_button_annot)
-
-        # format layout and add to stacked layout
-        load_annot_data_widget.setLayout(load_annot_data_form)
-        self.stackedLayout.addWidget(load_annot_data_widget)
+        render_form_annot.addRow(self.render_button_annot)
+        render_widget_annot.setLayout(render_form_annot)
+        self.render_form.addWidget(render_widget_annot)
 
         # add to main
         self.outer_layout.addLayout(io)
-        self.outer_layout.addLayout(self.stackedLayout)
+        self.outer_layout.addLayout(self.load_data_form)
+        self.outer_layout.addLayout(self.render_form)
         self.setLayout(self.outer_layout)
 
         # if add labels layer
@@ -230,7 +211,7 @@ class DatastrucWidget(QWidget):
             labels_layer = self.viewer.layers["Labels"]
 
             # add
-            widget = self.stackedLayout.currentWidget()
+            widget = self.render_form.currentWidget()
             layout = widget.layout()
 
             # title
@@ -299,7 +280,7 @@ class DatastrucWidget(QWidget):
             df = pl.scan_parquet(path)
 
         # update form
-        self.stackedLayout.setCurrentIndex(0)
+        self.render_form.setCurrentIndex(0)
         # avoid multiple firing of button due to history
         try:
             self.render_button.clicked.disconnect()
@@ -373,7 +354,7 @@ class DatastrucWidget(QWidget):
             raise ValueError("Not implemented yet!")
 
         # update form
-        self.stackedLayout.setCurrentIndex(0)
+        self.render_form.setCurrentIndex(1)
         # avoid multiple firing of button due to history
         try:
             self.render_button_annot.clicked.disconnect()
