@@ -347,9 +347,14 @@ class DatastrucWidget(QWidget):
         if file_type == "parquet":
             self.datastruc = None
             self.datastruc = item(None, None, None, None, None)
-            self.datastruc.load_from_parquet(path)
-            print(self.datastruc.gt_label_map)
-            print(self.datastruc.channel_label)
+            self.datastruc.load_from_parquet(path)            
+            # load channel labels
+            channel_label = self.datastruc.channel_label
+            self.channel_zero_label.setText(channel_label[0])
+            self.channel_one_label.setText(channel_label[1])
+            self.channel_two_label.setText(channel_label[2])
+            self.channel_three_label.setText(channel_label[3])
+            # scan df
             df = pl.scan_parquet(path)
         elif file_type == "csv":
             raise ValueError("Not implemented yet!")
@@ -557,7 +562,23 @@ class DatastrucWidget(QWidget):
         elif self.datastruc.dim == 3:
             raise ValueError("No 3D capability atm")
         #    histo_size = (x_bins, y_bins, z_bins)
-        self._render_histo(histo_size, vis_interpolation, labels=True)
+
+        # whether labels are present
+        gt_label_map = self.datastruc.gt_label_map
+        if not gt_label_map:  
+            self._render_histo(histo_size, vis_interpolation, labels=False)
+        else:
+            self._render_histo(histo_size, vis_interpolation, labels=True)
+            self.label_widget.layout().itemAtPosition(0,0).widget().setText(gt_label_map[0])
+            self.label_widget.layout().itemAtPosition(1,0).widget().setText(gt_label_map[1])
+            # add names
+            label_layout = self.label_widget.layout()
+            for i in gt_label_map.items():
+                label, name = i
+                if label!=0 and label!=1:
+                    label_layout.addWidget(QLabel(f"{label}"), label, 0)
+                    label_layout.addWidget(QLineEdit(f"{name}"), label, 1)
+                    self.label_widget.setLayout(label_layout)
 
     def _render_histo(self, histo_size, vis_interpolation, labels=False):
 
