@@ -347,7 +347,7 @@ class DatastrucWidget(QWidget):
         if file_type == "parquet":
             self.datastruc = None
             self.datastruc = item(None, None, None, None, None)
-            self.datastruc.load_from_parquet(path)            
+            self.datastruc.load_from_parquet(path)
             # load channel labels
             channel_label = self.datastruc.channel_label
             self.channel_zero_label.setText(channel_label[0])
@@ -425,6 +425,14 @@ class DatastrucWidget(QWidget):
         # drop zero labels
         drop_zero_label = self.drop_zero_box.isChecked()
 
+        # getchannel labels
+        self.datastruc.channel_label = [
+            self.channel_zero_label.text(),
+            self.channel_one_label.text(),
+            self.channel_two_label.text(),
+            self.channel_three_label.text(),
+        ]
+
         # save to this location
         self.datastruc.save_df_to_csv(
             path,
@@ -469,10 +477,18 @@ class DatastrucWidget(QWidget):
 
         except KeyError:
             print("No labels saved")
-            gt_label_map={}
+            gt_label_map = {}
 
         # drop zero labels
         drop_zero_label = self.drop_zero_box.isChecked()
+
+        # getchannel labels
+        self.datastruc.channel_label = [
+            self.channel_zero_label.text(),
+            self.channel_one_label.text(),
+            self.channel_two_label.text(),
+            self.channel_three_label.text(),
+        ]
 
         # save to this location
         self.datastruc.save_to_parquet(
@@ -566,17 +582,21 @@ class DatastrucWidget(QWidget):
 
         # whether labels are present
         gt_label_map = self.datastruc.gt_label_map
-        if not gt_label_map:  
+        if not gt_label_map:
             self._render_histo(histo_size, vis_interpolation, labels=False)
         else:
             self._render_histo(histo_size, vis_interpolation, labels=True)
-            self.label_widget.layout().itemAtPosition(0,1).widget().setText(gt_label_map[0])
-            self.label_widget.layout().itemAtPosition(1,1).widget().setText(gt_label_map[1])
+            self.label_widget.layout().itemAtPosition(0, 1).widget().setText(
+                gt_label_map[0]
+            )
+            self.label_widget.layout().itemAtPosition(1, 1).widget().setText(
+                gt_label_map[1]
+            )
             # add names
             label_layout = self.label_widget.layout()
             for i in gt_label_map.items():
                 label, name = i
-                if label!=0 and label!=1:
+                if label != 0 and label != 1:
                     label_layout.addWidget(QLabel(f"{label}"), label, 0)
                     label_layout.addWidget(QLineEdit(f"{name}"), label, 1)
                     self.label_widget.setLayout(label_layout)
