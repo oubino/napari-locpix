@@ -23,10 +23,13 @@ https://napari.org/stable/plugins/index.html
 
 ## Installation
 
+Install napari via [pip]:
+
+    pip install "napari[all]"
+
 You can install `napari-locpix` via [pip]:
 
     pip install napari-locpix
-
 
 To install latest development version :
 
@@ -34,6 +37,12 @@ To install latest development version :
 
 
 ## Usage
+
+First launch napari
+
+    napari
+
+Then can find the plugin in napari, in the plugins menu, titled 'Annotate (napari-locpix)'
 
 This plugin allows a user to
 
